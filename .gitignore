@@ -1,0 +1,40 @@
+# SVN working copies and shared externals metadata (at every depth)
+.svn/
+
+# Local agent skills and configuration
+.agents/
+
+# Existing SVN-managed files and external working copies.
+# Refresh this list when SVN takes ownership of additional files.
+/.cursorignore
+/ExcelData/Excel表格转json文件.bat
+/ExcelData/Excel表格转json文件.sh
+/GameLocalizationTables/GameLocalizationTable.csv
+/stylua.toml
+/Tools/excel2json/
+
+# Local caches and temporary output
+.cache/
+__pycache__/
+.pytest_cache/
+.tmp/
+.codex-tmp/
+Temp/
+scratch/
+sourcemap.json
+*.tmp
+*.temp
+*.log
+~$*
+.DS_Store
+Thumbs.db
+
+# Restore/build output inside the converter source tree.
+# SVN-managed converter runtime is excluded above with its external root.
+/Tools/**/bin/
+/Tools/**/obj/
+/Tools/**/packages/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
