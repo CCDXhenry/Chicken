@@ -1,8 +1,8 @@
 # SVN working copies and shared externals metadata (at every depth)
 .svn/
 
-# Local agent skills and configuration
-.agents/
+# Local agent skills and configuration (uncomment if you do not want skills in git)
+# .agents/
 
 # Existing SVN-managed files and external working copies.
 # Refresh this list when SVN takes ownership of additional files.
