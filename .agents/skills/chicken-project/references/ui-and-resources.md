@@ -4,13 +4,15 @@
 
 ## UI 模板与适配
 
-- **共用排版与缩放**：以 PC 模板作为唯一排版基准；手机、平板与 PC 共用根 UIScale 和系统区域容器规则。禁止另设 Touch/Desktop 几何变体、触屏最小像素补偿、窄屏重排或移动端专用换位。输入差异仅改变交互与提示，同一操作槽位保持相同位置和尺寸。
-- **唯一来源**：所有项目 UI（屏幕 UI、BillboardGui、SurfaceGui、弹窗、遮罩与列表项）必须在 Studio **Edit 模式**下创建为 `ReplicatedStorage.UI`（Folder）中的持久化模板实例。结构、静态样式及设计布局以这些实例为唯一来源，不能另在业务代码中保存一套 UI 定义。
+- **固定画布与公共参考**：普通屏幕 UI 在 `1920×1080` 固定居中画布内完成唯一排版，手机/平板/PC 只整体等比缩放。UIAdapter 使用 `AdaptiveType.Center`，不扩展根逻辑尺寸，不动态监听系统区域或重排 HUD。
+- **设计禁放参考**：Studio Edit 的 `ReplicatedStorage.UI.ScreenLayoutGuideFrame` 是多端模拟采样的统一禁放图，仅覆盖左上系统区与原生跳跃按钮的多端并集，已含 24 设计像素间距；不预留底部横条、设备侧边、右上系统区或左下摇杆。设计时临时复制到业务画布原点，正式模板移除副本。
+- **端独立 UI**：明确独立的操作 UI 可用 `Desktop`/`Touch` 模板；其触控尺寸和原生控件依附规则不扩散到普通 HUD。普通屏幕 UI 不再使用区域绑定 Attributes。
+- **唯一来源**：所有项目 UI（屏幕 UI、BillboardGui、SurfaceGui、弹窗、遮罩、飘字动效与列表项）必须在 Studio **Edit 模式**下创建为 `ReplicatedStorage.UI`（Folder）中的持久化模板实例。结构、静态样式及设计布局以这些实例为唯一来源，不能另在业务代码中保存一套 UI 定义。
 - **禁止运行时代码拼装 UI**：游戏业务脚本不得通过 `Instance.new` 或代码构建器在运行期创建、补建或拼装 UI（包括 Frame、文字、按钮、UIScale、UIStroke 与布局组件）。模板缺失时应在 Studio Edit 修复实例，严禁用代码做运行期兜底。
 - **代码职责**：运行时仅从模板克隆完整 UI 实例、绑定数据与交互、控制显隐及动画，并负责销毁清理。动态列表克隆对应的预置项模板。
-- **布局职责**：固定尺寸、位置、颜色、字体在模板属性或 Attributes 中维护；代码读取模板数据，按视口或安全区计算适配，不硬编码第二套设计布局。
+- **布局职责**：固定尺寸、位置、颜色、字体在模板属性或 Attributes 中维护；代码读取模板数据，只负责根画布的视口等比缩放，不硬编码第二套设计布局。
 - **根缩放与设计分辨率**：以 1920×1080 设计基准，面板、文本、描边使用统一的视口适配负责人，不对同一树叠加第二套视口缩放。
-- **文字与描边**：屏幕单行文字关闭 `TextScaled` 与 `TextWrapped`，通过设计字号结合根 `UIScale` 缩放。多行文本保持换行。文字描边强制使用 `StrokeSizingMode = ScaledSize`。
+- **文字与描边**：屏幕单行文字关闭 `TextScaled` 与 `TextWrapped`。字号上限必须从 7 级标准字号模板（T1: `72`、T2: `56`、T3: `44/36`、T4: `32`、T5: `28`、T6: `26/24/22`、T7: `20/9`）选取并在模板写入 `DesignTextSize`，文本框预留 8px 留白高度保证 90% 以上拟合率，运行时用 `UIManager.FitTextLabel` 在设计框内只缩不放（自动变宽控件结合 `UISizeConstraint.MaxSize` 作为 `FitLimit` 防止递归吞字），再由根 `UIScale` 整体缩放。静态文字由 `UIManager.FitMarkedRoot` 批量拟合。文字描边强制使用 `StrokeSizingMode = ScaledSize`。阴影层通过 `FitTextWithShadow` 与主字共享文案和字号。
 
 ## 3D 浮动标牌（BillboardGui）与文本描边自适应规范
 

@@ -7,6 +7,11 @@
 - 优先使用文本搜索与路径过滤定位当前源码及调用方。动态 require 路径、实例树和运行期状态须结合源码与 Studio 只读查询确认。
 - **脚本首行中文注释与 strict 规范**：所有新增业务脚本必须在第一行添加脚本作用的中文注释，准确描述模块职责与调用定位。第二行保留 `--!strict`（明确的外部第三方依赖和生成数据除外）。修改既有脚本时，首行若无中文注释应一并补齐。
 - 类型错误通过准确类型、nil 分支及 IsA 收窄修复，不删除 strict、不扩大为 any、不用无意义 assert 掩盖错误。无返回值标注使用 `: ()`。
+- **统一严格类型分析与门禁（参考 TheGreatEscape）**：
+  - 单文件/多文件即时分析：`pwsh -File Tools/check-strict.ps1 <脚本路径>`
+  - Git 提交前暂存区门禁：`pwsh -File Tools/check-strict.ps1 -Staged`
+  - 全仓库全量检测：`pwsh -File Tools/check-strict.ps1 -All`
+  - 核心分析器基于 `luau-lsp analyze`，配合 `Tools/globalTypes.d.luau` 及脚本动态构建的 DataModel `sourcemap.json`，自动隔离未修改依赖的既有警告。
 
 ## Studio 与源码同步
 

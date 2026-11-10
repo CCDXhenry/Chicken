@@ -1,6 +1,0 @@
-interface:
-  display_name: "Roblox UI 区域机制"
-  short_description: "用预置 Frame 划分系统占用区与可用空间，统一处理顶栏和原生触控布局"
-  default_prompt: "使用 $roblox-ui-regions 为当前 Roblox 项目接入系统 UI 禁放区与通用布局区域。"
-policy:
-  allow_implicit_invocation: true

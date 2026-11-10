@@ -14,7 +14,7 @@ description: Chicken Roblox 项目开发规范。处理本仓库代码、配置�
 
 ## 按任务读取
 
-- 屏幕系统占用区、安全区与触控布局：读取项目内 [roblox-ui-regions](../roblox-ui-regions/SKILL.md)，通用区域机制由该 skill 维护，Chicken 业务布局仍由项目维护。
+- UI 设计与 Studio 模板、固定画布与公共禁放参考、GUI 管理器分层、文本二分拟合或 3D 标牌通用规范：读取通用的 [roblox-ui-system](../roblox-ui-system/SKILL.md)。Chicken 业务布局仍由项目维护。
 - 入口、消息、数据层、配置、存档或模块职责：[架构与配置](references/architecture-and-config.md)。
 - 源码探索、严格类型检查、Studio 模式、包边界或 Git 操作：[开发与交付](references/development-workflow.md)。
 - UI、文字本地化、BillboardGui 自适应、资源预载或动画生命周期：[UI 与资源](references/ui-and-resources.md)。所有 BillboardGui 必须优先遵循该规范（UIStroke ScaledSize 与 UIAdapter 适配）。

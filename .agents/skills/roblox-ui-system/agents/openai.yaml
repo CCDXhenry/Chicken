@@ -1,0 +1,6 @@
+interface:
+  display_name: "Roblox UI 与 GUI 通用系统"
+  short_description: "Roblox 固定1920画布、公共禁放参考模板、GUI框架、文本拟合与3D标牌规范"
+  default_prompt: "遵循 $roblox-ui-system 规范进行 Roblox UI 设计、Studio 模板构建、固定画布与公共禁放参考或 GUI 框架开发。"
+policy:
+  allow_implicit_invocation: true

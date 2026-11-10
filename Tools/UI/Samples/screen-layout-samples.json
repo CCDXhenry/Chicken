@@ -1,0 +1,2256 @@
+{
+  "version": 1,
+  "collectedDate": "2026-11-10",
+  "canvas": [
+    1920,
+    1080
+  ],
+  "padding": 24,
+  "source": "Studio device simulation; not physical devices",
+  "samples": [
+    {
+      "label": "desktop-1080",
+      "deviceId": "hd_1080",
+      "renderedSize": [
+        1918.2222900390625,
+        1079
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0.88885498046875,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        1920,
+        1079
+      ],
+      "movementExcluded": true,
+      "jumpState": "hidden",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          1920,
+          1079
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -0.8896787327190672,
+            0.0,
+            207.30308664727085,
+            58.053751884804875
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            207.30308664727085,
+            58.053751884804875
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            232,
+            83
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        1920,
+        1079
+      ],
+      "viewport": [
+        0,
+        0,
+        1920,
+        1079
+      ],
+      "scale": 0.9990741014480591,
+      "topbar": [
+        208,
+        0,
+        1920,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "deviceId": "hd_1080"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1080,
+                "x": 1920,
+                "height": 1080,
+                "width": 1920
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_13",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 153.3333282470703,
+              "resolution": {
+                "y": 390,
+                "x": 844,
+                "height": 390,
+                "width": 844
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/desktop-1080.png"
+    },
+    {
+      "label": "desktop-720",
+      "deviceId": "hd_720",
+      "renderedSize": [
+        1278.22216796875,
+        719
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0.888916015625,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        1280,
+        719
+      ],
+      "movementExcluded": true,
+      "jumpState": "hidden",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          1280,
+          719
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -1.335228532270131,
+            0.0,
+            311.098713291712,
+            87.1210030086104
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            311.098713291712,
+            87.1210030086104
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            336,
+            112
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        1280,
+        719
+      ],
+      "viewport": [
+        0,
+        0,
+        1280,
+        719
+      ],
+      "scale": 0.6657407283782959,
+      "topbar": [
+        208,
+        0,
+        1280,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "deviceId": "hd_720"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_720",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 720,
+                "x": 1280,
+                "height": 720,
+                "width": 1280
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1080,
+                "x": 1920,
+                "height": 1080,
+                "width": 1920
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/desktop-720.png"
+    },
+    {
+      "label": "desktop-1440",
+      "deviceId": "hd_1080",
+      "resolution": {
+        "width": 2560,
+        "height": 1440
+      },
+      "renderedSize": [
+        2558.22216796875,
+        1439
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0.888916015625,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        2560,
+        1439
+      ],
+      "movementExcluded": true,
+      "jumpState": "hidden",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          2560,
+          1439
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -0.6671503366319697,
+            0.0,
+            155.4412643845067,
+            43.53023102800982
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            155.4412643845067,
+            43.53023102800982
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            180,
+            68
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        2560,
+        1439
+      ],
+      "viewport": [
+        0,
+        0,
+        2560,
+        1439
+      ],
+      "scale": 1.3324073553085327,
+      "topbar": [
+        208,
+        0,
+        2560,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "resolution": {
+                "height": 1440,
+                "width": 2560
+              },
+              "deviceId": "hd_1080"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1440,
+                "x": 2560,
+                "height": 1440,
+                "width": 2560
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_720",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 720,
+                "x": 1280,
+                "height": 720,
+                "width": 1280
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/desktop-1440.png"
+    },
+    {
+      "label": "desktop-ultrawide",
+      "deviceId": "hd_1080",
+      "resolution": {
+        "width": 2560,
+        "height": 1080
+      },
+      "renderedSize": [
+        1916.4444580078125,
+        1078
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        321.77777099609375,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        2560,
+        1078
+      ],
+      "movementExcluded": true,
+      "jumpState": "hidden",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          2560,
+          1078
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -322.3747628633619,
+            0.0,
+            -113.98886203495049,
+            58.10760696176858
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        2560,
+        1078
+      ],
+      "viewport": [
+        0,
+        0,
+        2560,
+        1078
+      ],
+      "scale": 0.9981481432914734,
+      "topbar": [
+        208,
+        0,
+        2560,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "resolution": {
+                "height": 1080,
+                "width": 2560
+              },
+              "deviceId": "hd_1080"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1080,
+                "x": 2560,
+                "height": 1080,
+                "width": 2560
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1440,
+                "x": 2560,
+                "height": 1440,
+                "width": 2560
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/desktop-ultrawide.png"
+    },
+    {
+      "label": "iphone_6_Plus-LandscapeLeft",
+      "deviceId": "iphone_6_Plus",
+      "orientation": "LandscapeLeft",
+      "renderedSize": [
+        734.2222290039062,
+        413
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0.388885498046875,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        735,
+        413
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          735,
+          413
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -1.016940313041467,
+            0.0,
+            542.9055926046781,
+            151.6707062943641
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            542.9055926046781,
+            151.6707062943641
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            567,
+            176
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            640,
+            323,
+            710,
+            393
+          ],
+          "designRect": [
+            1672.5908532799417,
+            844.6489333289587,
+            1855.6417057041742,
+            1027.6997857531912
+          ],
+          "clippedDesignRect": [
+            1672.5908532799417,
+            844.6489333289587,
+            1855.6417057041742,
+            1027.6997857531912
+          ],
+          "paddedDesignRect": [
+            1648,
+            820,
+            1880,
+            1052
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        735,
+        413
+      ],
+      "viewport": [
+        0,
+        0,
+        735,
+        413
+      ],
+      "scale": 0.38240739703178406,
+      "topbar": [
+        208,
+        0,
+        735,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeLeft",
+              "deviceId": "iphone_6_Plus"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_6_Plus",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 133.6666717529297,
+              "resolution": {
+                "y": 414,
+                "x": 736,
+                "height": 414,
+                "width": 736
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "hd_1080",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 96,
+              "resolution": {
+                "y": 1080,
+                "x": 2560,
+                "height": 1080,
+                "width": 2560
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/iphone_6_Plus-LandscapeLeft.png"
+    },
+    {
+      "label": "iphone_6_Plus-LandscapeRight",
+      "deviceId": "iphone_6_Plus",
+      "orientation": "LandscapeRight",
+      "renderedSize": [
+        734.2222290039062,
+        413
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0.388885498046875,
+        0
+      ],
+      "device": [
+        0,
+        0,
+        735,
+        413
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          735,
+          413
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -1.016940313041467,
+            0.0,
+            542.9055926046781,
+            151.6707062943641
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            542.9055926046781,
+            151.6707062943641
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            567,
+            176
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            640,
+            323,
+            710,
+            393
+          ],
+          "designRect": [
+            1672.5908532799417,
+            844.6489333289587,
+            1855.6417057041742,
+            1027.6997857531912
+          ],
+          "clippedDesignRect": [
+            1672.5908532799417,
+            844.6489333289587,
+            1855.6417057041742,
+            1027.6997857531912
+          ],
+          "paddedDesignRect": [
+            1648,
+            820,
+            1880,
+            1052
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        735,
+        413
+      ],
+      "viewport": [
+        0,
+        0,
+        735,
+        413
+      ],
+      "scale": 0.38240739703178406,
+      "topbar": [
+        208,
+        0,
+        735,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeRight",
+              "deviceId": "iphone_6_Plus"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_6_Plus",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 133.6666717529297,
+              "resolution": {
+                "y": 414,
+                "x": 736,
+                "height": 414,
+                "width": 736
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_6_Plus",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 133.6666717529297,
+              "resolution": {
+                "y": 414,
+                "x": 736,
+                "height": 414,
+                "width": 736
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/iphone_6_Plus-LandscapeRight.png"
+    },
+    {
+      "label": "samsung_galaxy_a06-LandscapeLeft",
+      "deviceId": "samsung_galaxy_a06",
+      "orientation": "LandscapeLeft",
+      "renderedSize": [
+        638.2222290039062,
+        359
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        80.38888549804688,
+        0
+      ],
+      "device": [
+        47,
+        0,
+        752,
+        338
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          799,
+          359
+        ]
+      },
+      "reserved": [
+        {
+          "name": "DeviceBottom",
+          "screenRect": [
+            0,
+            338,
+            799,
+            359
+          ],
+          "designRect": [
+            -241.83842444983935,
+            1016.8244895748888,
+            2161.838401497901,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": [
+            0,
+            1016.8244895748888,
+            1920,
+            1079.9999756135653
+          ],
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceLeft",
+          "screenRect": [
+            0,
+            0,
+            47,
+            359
+          ],
+          "designRect": [
+            -241.83842444983935,
+            0.0,
+            -100.44566998232521,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceRight",
+          "screenRect": [
+            752,
+            0,
+            799,
+            359
+          ],
+          "designRect": [
+            2020.4456470303867,
+            0.0,
+            2161.838401497901,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            47,
+            0,
+            255,
+            58
+          ],
+          "designRect": [
+            -100.44566998232521,
+            0.0,
+            525.2924774483756,
+            174.4846757258685
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            525.2924774483756,
+            174.4846757258685
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            550,
+            199
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            657,
+            248,
+            727,
+            318
+          ],
+          "designRect": [
+            1734.6517816173264,
+            746.0724065519895,
+            1945.2367350795814,
+            956.6573600142445
+          ],
+          "clippedDesignRect": [
+            1734.6517816173264,
+            746.0724065519895,
+            1920,
+            956.6573600142445
+          ],
+          "paddedDesignRect": [
+            1710,
+            722,
+            1920,
+            981
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        799,
+        359
+      ],
+      "viewport": [
+        0,
+        0,
+        799,
+        359
+      ],
+      "scale": 0.3324074149131775,
+      "topbar": [
+        255,
+        0,
+        752,
+        58
+      ],
+      "coordinateShift": [
+        47,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeLeft",
+              "deviceId": "samsung_galaxy_a06"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_a06",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 131,
+              "resolution": {
+                "y": 360,
+                "x": 800,
+                "height": 360,
+                "width": 800
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_6_Plus",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 133.6666717529297,
+              "resolution": {
+                "y": 414,
+                "x": 736,
+                "height": 414,
+                "width": 736
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/samsung_galaxy_a06-LandscapeLeft.png"
+    },
+    {
+      "label": "samsung_galaxy_a06-LandscapeRight",
+      "deviceId": "samsung_galaxy_a06",
+      "orientation": "LandscapeRight",
+      "renderedSize": [
+        638.2222290039062,
+        359
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        80.38888549804688,
+        0
+      ],
+      "device": [
+        47,
+        0,
+        752,
+        338
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          799,
+          359
+        ]
+      },
+      "reserved": [
+        {
+          "name": "DeviceBottom",
+          "screenRect": [
+            0,
+            338,
+            799,
+            359
+          ],
+          "designRect": [
+            -241.83842444983935,
+            1016.8244895748888,
+            2161.838401497901,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": [
+            0,
+            1016.8244895748888,
+            1920,
+            1079.9999756135653
+          ],
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceLeft",
+          "screenRect": [
+            0,
+            0,
+            47,
+            359
+          ],
+          "designRect": [
+            -241.83842444983935,
+            0.0,
+            -100.44566998232521,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceRight",
+          "screenRect": [
+            752,
+            0,
+            799,
+            359
+          ],
+          "designRect": [
+            2020.4456470303867,
+            0.0,
+            2161.838401497901,
+            1079.9999756135653
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            47,
+            0,
+            255,
+            58
+          ],
+          "designRect": [
+            -100.44566998232521,
+            0.0,
+            525.2924774483756,
+            174.4846757258685
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            525.2924774483756,
+            174.4846757258685
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            550,
+            199
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            657,
+            248,
+            727,
+            318
+          ],
+          "designRect": [
+            1734.6517816173264,
+            746.0724065519895,
+            1945.2367350795814,
+            956.6573600142445
+          ],
+          "clippedDesignRect": [
+            1734.6517816173264,
+            746.0724065519895,
+            1920,
+            956.6573600142445
+          ],
+          "paddedDesignRect": [
+            1710,
+            722,
+            1920,
+            981
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        799,
+        359
+      ],
+      "viewport": [
+        0,
+        0,
+        799,
+        359
+      ],
+      "scale": 0.3324074149131775,
+      "topbar": [
+        255,
+        0,
+        752,
+        58
+      ],
+      "coordinateShift": [
+        47,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeRight",
+              "deviceId": "samsung_galaxy_a06"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_a06",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 131,
+              "resolution": {
+                "y": 360,
+                "x": 800,
+                "height": 360,
+                "width": 800
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_a06",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 131,
+              "resolution": {
+                "y": 360,
+                "x": 800,
+                "height": 360,
+                "width": 800
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/samsung_galaxy_a06-LandscapeRight.png"
+    },
+    {
+      "label": "iphone_13-LandscapeLeft",
+      "deviceId": "iphone_13",
+      "orientation": "LandscapeLeft",
+      "renderedSize": [
+        691.5555419921875,
+        389
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        75.72222900390625,
+        0
+      ],
+      "device": [
+        47,
+        0,
+        796,
+        389
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          843,
+          389
+        ]
+      },
+      "reserved": [
+        {
+          "name": "DeviceLeft",
+          "screenRect": [
+            0,
+            0,
+            47,
+            389
+          ],
+          "designRect": [
+            -210.23138657908626,
+            0.0,
+            -79.74295142344215,
+            1080.0000271392673
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceRight",
+          "screenRect": [
+            796,
+            0,
+            843,
+            389
+          ],
+          "designRect": [
+            1999.7429620143757,
+            0.0,
+            2130.2313971700196,
+            1080.0000271392673
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            47,
+            0,
+            255,
+            58
+          ],
+          "designRect": [
+            -79.74295142344215,
+            0.0,
+            497.7377828823871,
+            161.02828168143316
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            497.7377828823871,
+            161.02828168143316
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            522,
+            186
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            701,
+            299,
+            771,
+            369
+          ],
+          "designRect": [
+            1735.9897420189247,
+            830.1285555646296,
+            1930.3342199103097,
+            1024.4730334560145
+          ],
+          "clippedDesignRect": [
+            1735.9897420189247,
+            830.1285555646296,
+            1920,
+            1024.4730334560145
+          ],
+          "paddedDesignRect": [
+            1711,
+            806,
+            1920,
+            1049
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        843,
+        389
+      ],
+      "viewport": [
+        0,
+        0,
+        843,
+        389
+      ],
+      "scale": 0.3601851761341095,
+      "topbar": [
+        255,
+        0,
+        796,
+        58
+      ],
+      "coordinateShift": [
+        47,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeLeft",
+              "deviceId": "iphone_13"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_13",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 153.3333282470703,
+              "resolution": {
+                "y": 390,
+                "x": 844,
+                "height": 390,
+                "width": 844
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_a06",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 131,
+              "resolution": {
+                "y": 360,
+                "x": 800,
+                "height": 360,
+                "width": 800
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/iphone_13-LandscapeLeft.png"
+    },
+    {
+      "label": "iphone_13-LandscapeRight",
+      "deviceId": "iphone_13",
+      "orientation": "LandscapeRight",
+      "renderedSize": [
+        691.5555419921875,
+        389
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        75.72222900390625,
+        0
+      ],
+      "device": [
+        47,
+        0,
+        796,
+        389
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          843,
+          389
+        ]
+      },
+      "reserved": [
+        {
+          "name": "DeviceLeft",
+          "screenRect": [
+            0,
+            0,
+            47,
+            389
+          ],
+          "designRect": [
+            -210.23138657908626,
+            0.0,
+            -79.74295142344215,
+            1080.0000271392673
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "DeviceRight",
+          "screenRect": [
+            796,
+            0,
+            843,
+            389
+          ],
+          "designRect": [
+            1999.7429620143757,
+            0.0,
+            2130.2313971700196,
+            1080.0000271392673
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": false
+        },
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            47,
+            0,
+            255,
+            58
+          ],
+          "designRect": [
+            -79.74295142344215,
+            0.0,
+            497.7377828823871,
+            161.02828168143316
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            497.7377828823871,
+            161.02828168143316
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            522,
+            186
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            701,
+            299,
+            771,
+            369
+          ],
+          "designRect": [
+            1735.9897420189247,
+            830.1285555646296,
+            1930.3342199103097,
+            1024.4730334560145
+          ],
+          "clippedDesignRect": [
+            1735.9897420189247,
+            830.1285555646296,
+            1920,
+            1024.4730334560145
+          ],
+          "paddedDesignRect": [
+            1711,
+            806,
+            1920,
+            1049
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        843,
+        389
+      ],
+      "viewport": [
+        0,
+        0,
+        843,
+        389
+      ],
+      "scale": 0.3601851761341095,
+      "topbar": [
+        255,
+        0,
+        796,
+        58
+      ],
+      "coordinateShift": [
+        47,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeRight",
+              "deviceId": "iphone_13"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_13",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 153.3333282470703,
+              "resolution": {
+                "y": 390,
+                "x": 844,
+                "height": 390,
+                "width": 844
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_13",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 153.3333282470703,
+              "resolution": {
+                "y": 390,
+                "x": 844,
+                "height": 390,
+                "width": 844
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/iphone_13-LandscapeRight.png"
+    },
+    {
+      "label": "ipad_6th_generation-LandscapeLeft",
+      "deviceId": "ipad_6th_generation",
+      "orientation": "LandscapeLeft",
+      "renderedSize": [
+        1022.9999389648438,
+        575.4375
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        3.0517578125e-05,
+        95.78125
+      ],
+      "device": [
+        0,
+        0,
+        1023,
+        767
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          1023,
+          767
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -5.727639552483413e-05,
+            -179.7654039384234,
+            390.3811918636195,
+            -70.90909408207305
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            853,
+            557,
+            973,
+            677
+          ],
+          "designRect": [
+            1600.9384307833777,
+            865.6305372682515,
+            1826.1583822103096,
+            1090.8504886951832
+          ],
+          "clippedDesignRect": [
+            1600.9384307833777,
+            865.6305372682515,
+            1826.1583822103096,
+            1080
+          ],
+          "paddedDesignRect": [
+            1576,
+            841,
+            1851,
+            1080
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        1023,
+        767
+      ],
+      "viewport": [
+        0,
+        0,
+        1023,
+        767
+      ],
+      "scale": 0.5328124761581421,
+      "topbar": [
+        208,
+        0,
+        1023,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeLeft",
+              "deviceId": "ipad_6th_generation"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "ipad_6th_generation",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 132,
+              "resolution": {
+                "y": 768,
+                "x": 1024,
+                "height": 768,
+                "width": 1024
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "iphone_13",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 153.3333282470703,
+              "resolution": {
+                "y": 390,
+                "x": 844,
+                "height": 390,
+                "width": 844
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/ipad_6th_generation-LandscapeLeft.png"
+    },
+    {
+      "label": "ipad_6th_generation-LandscapeRight",
+      "deviceId": "ipad_6th_generation",
+      "orientation": "LandscapeRight",
+      "renderedSize": [
+        1022.9999389648438,
+        575.4375
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        3.0517578125e-05,
+        95.78125
+      ],
+      "device": [
+        0,
+        0,
+        1023,
+        767
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          1023,
+          767
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            -5.727639552483413e-05,
+            -179.7654039384234,
+            390.3811918636195,
+            -70.90909408207305
+          ],
+          "clippedDesignRect": null,
+          "paddedDesignRect": null,
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            853,
+            557,
+            973,
+            677
+          ],
+          "designRect": [
+            1600.9384307833777,
+            865.6305372682515,
+            1826.1583822103096,
+            1090.8504886951832
+          ],
+          "clippedDesignRect": [
+            1600.9384307833777,
+            865.6305372682515,
+            1826.1583822103096,
+            1080
+          ],
+          "paddedDesignRect": [
+            1576,
+            841,
+            1851,
+            1080
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        1023,
+        767
+      ],
+      "viewport": [
+        0,
+        0,
+        1023,
+        767
+      ],
+      "scale": 0.5328124761581421,
+      "topbar": [
+        208,
+        0,
+        1023,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeRight",
+              "deviceId": "ipad_6th_generation"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "ipad_6th_generation",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 132,
+              "resolution": {
+                "y": 768,
+                "x": 1024,
+                "height": 768,
+                "width": 1024
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "ipad_6th_generation",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 132,
+              "resolution": {
+                "y": 768,
+                "x": 1024,
+                "height": 768,
+                "width": 1024
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/ipad_6th_generation-LandscapeRight.png"
+    },
+    {
+      "label": "samsung_galaxy_tab_a8-LandscapeLeft",
+      "deviceId": "samsung_galaxy_tab_a8",
+      "orientation": "LandscapeLeft",
+      "renderedSize": [
+        959,
+        539.4375
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0,
+        29.78125
+      ],
+      "device": [
+        0,
+        0,
+        959,
+        599
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          959,
+          599
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            0.0,
+            -59.62460801897881,
+            416.4337785669706,
+            56.496349466041835
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            416.4337785669706,
+            56.496349466041835
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            441,
+            81
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            789,
+            389,
+            909,
+            509
+          ],
+          "designRect": [
+            1579.6454388910568,
+            719.1866413202114,
+            1819.8956957566168,
+            959.4368981857714
+          ],
+          "clippedDesignRect": [
+            1579.6454388910568,
+            719.1866413202114,
+            1819.8956957566168,
+            959.4368981857714
+          ],
+          "paddedDesignRect": [
+            1555,
+            695,
+            1844,
+            984
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        959,
+        599
+      ],
+      "viewport": [
+        0,
+        0,
+        959,
+        599
+      ],
+      "scale": 0.49947917461395264,
+      "topbar": [
+        208,
+        0,
+        959,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeLeft",
+              "deviceId": "samsung_galaxy_tab_a8"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_tab_a8",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 108,
+              "resolution": {
+                "y": 600,
+                "x": 960,
+                "height": 600,
+                "width": 960
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "ipad_6th_generation",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 132,
+              "resolution": {
+                "y": 768,
+                "x": 1024,
+                "height": 768,
+                "width": 1024
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/samsung_galaxy_tab_a8-LandscapeLeft.png"
+    },
+    {
+      "label": "samsung_galaxy_tab_a8-LandscapeRight",
+      "deviceId": "samsung_galaxy_tab_a8",
+      "orientation": "LandscapeRight",
+      "renderedSize": [
+        959,
+        539.4375
+      ],
+      "source": "Studio running client device simulation",
+      "origin": [
+        0,
+        29.78125
+      ],
+      "device": [
+        0,
+        0,
+        959,
+        599
+      ],
+      "movementExcluded": true,
+      "jumpState": "visible",
+      "modal": {
+        "active": true,
+        "origin": [
+          0,
+          0
+        ],
+        "size": [
+          959,
+          599
+        ]
+      },
+      "reserved": [
+        {
+          "name": "TopLeftCore",
+          "screenRect": [
+            0,
+            0,
+            208,
+            58
+          ],
+          "designRect": [
+            0.0,
+            -59.62460801897881,
+            416.4337785669706,
+            56.496349466041835
+          ],
+          "clippedDesignRect": [
+            0,
+            0,
+            416.4337785669706,
+            56.496349466041835
+          ],
+          "paddedDesignRect": [
+            0,
+            0,
+            441,
+            81
+          ],
+          "includedInGuide": true
+        },
+        {
+          "name": "JumpButton",
+          "screenRect": [
+            789,
+            389,
+            909,
+            509
+          ],
+          "designRect": [
+            1579.6454388910568,
+            719.1866413202114,
+            1819.8956957566168,
+            959.4368981857714
+          ],
+          "clippedDesignRect": [
+            1579.6454388910568,
+            719.1866413202114,
+            1819.8956957566168,
+            959.4368981857714
+          ],
+          "paddedDesignRect": [
+            1555,
+            695,
+            1844,
+            984
+          ],
+          "includedInGuide": true
+        }
+      ],
+      "logicalSize": [
+        1920,
+        1080
+      ],
+      "screenSize": [
+        959,
+        599
+      ],
+      "viewport": [
+        0,
+        0,
+        959,
+        599
+      ],
+      "scale": 0.49947917461395264,
+      "topbar": [
+        208,
+        0,
+        959,
+        58
+      ],
+      "coordinateShift": [
+        0,
+        58
+      ],
+      "simulation": {
+        "target": "client-1",
+        "targets": {
+          "client-1": {
+            "applied": {
+              "scalingMode": "FitToWindow",
+              "orientation": "LandscapeRight",
+              "deviceId": "samsung_galaxy_tab_a8"
+            },
+            "after": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_tab_a8",
+              "orientation": "LandscapeRight",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 108,
+              "resolution": {
+                "y": 600,
+                "x": 960,
+                "height": 600,
+                "width": 960
+              }
+            },
+            "success": true,
+            "before": {
+              "isSimulating": true,
+              "activeDeviceId": "samsung_galaxy_tab_a8",
+              "orientation": "LandscapeLeft",
+              "scalingMode": "FitToWindow",
+              "pixelDensity": 108,
+              "resolution": {
+                "y": 600,
+                "x": 960,
+                "height": 600,
+                "width": 960
+              }
+            }
+          }
+        }
+      },
+      "screenshot": "screenshots/samsung_galaxy_tab_a8-LandscapeRight.png"
+    }
+  ],
+  "includedRegionNames": [
+    "TopLeftCore",
+    "JumpButton"
+  ]
+}
