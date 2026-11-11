@@ -79,19 +79,45 @@ local function CopyCargo(cargo: Cargo): Cargo
 	}
 end
 
-function FarmSaveData.CreateDefault(): FarmSave
+function FarmSaveData.CreateDefault(overrideInitialValues: { [string]: any }?): FarmSave
+	local initial = overrideInitialValues or {}
+	local initialUnlocked: { [string]: boolean } = { chicken = true }
+	if initial.UnlockedSpecies then
+		for k, v in initial.UnlockedSpecies do
+			if v == true and SpeciesIds[k] then
+				initialUnlocked[k] = true
+			end
+		end
+	end
+	local initialOwnedWeapons: { [string]: boolean } = { ["1"] = true }
+	if initial.OwnedWeapons then
+		for k, v in initial.OwnedWeapons do
+			if v == true then
+				initialOwnedWeapons[k] = true
+			end
+		end
+	end
+	local initialWeaponLevels: { [string]: number } = { ["1"] = 1 }
+	if initial.WeaponLevels then
+		for k, v in initial.WeaponLevels do
+			if type(v) == "number" and v >= 1 and v <= 5 then
+				initialWeaponLevels[k] = v
+			end
+		end
+	end
+
 	return {
 		version = FarmSaveData.Version,
 		revision = 0, -- 每次原子经营变更递增；用于辨别保存期间的新修改
-		cash = 0, -- 初始金币，不继承旧共享农场的会话余额
-		unlockedSpecies = { chicken = true }, -- 持久化 Map 全部使用 string key
-		selectedSpeciesId = "chicken",
-		ownedWeapons = { ["1"] = true },
-		weaponLevels = { ["1"] = 1 }, -- 每件已购武器独立 Lv.1–5
-		equippedWeaponTier = 1,
-		collectTier = 1,
-		basketTier = 1,
-		restaurantLevel = 1,
+		cash = if type(initial.Cash) == "number" and initial.Cash >= 0 then initial.Cash else 0, -- 初始金币
+		unlockedSpecies = initialUnlocked, -- 持久化 Map 全部使用 string key
+		selectedSpeciesId = if type(initial.SelectedSpeciesId) == "string" and initialUnlocked[initial.SelectedSpeciesId] then initial.SelectedSpeciesId else "chicken",
+		ownedWeapons = initialOwnedWeapons,
+		weaponLevels = initialWeaponLevels, -- 每件已购武器独立 Lv.1–5
+		equippedWeaponTier = if type(initial.EquippedWeaponTier) == "number" and initial.EquippedWeaponTier >= 1 and initial.EquippedWeaponTier <= 5 then initial.EquippedWeaponTier else 1,
+		collectTier = if type(initial.CollectTier) == "number" and initial.CollectTier >= 1 and initial.CollectTier <= 5 then initial.CollectTier else 1,
+		basketTier = if type(initial.BasketTier) == "number" and initial.BasketTier >= 1 and initial.BasketTier <= 5 then initial.BasketTier else 1,
+		restaurantLevel = if type(initial.RestaurantLevel) == "number" and initial.RestaurantLevel >= 1 and initial.RestaurantLevel <= 5 then initial.RestaurantLevel else 1,
 		basket = {}, -- 入筐后停止地面过期，保留生成时的重量与售价
 		kitchen = {}, -- FIFO；处理中剩余秒数离线暂停，禁止保存 os.clock 绝对值
 	}

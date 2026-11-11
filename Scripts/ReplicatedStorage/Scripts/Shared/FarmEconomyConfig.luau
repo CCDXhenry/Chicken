@@ -1,24 +1,61 @@
--- 新版个人农场数值契约：集中定义五物种、四品质、五阶装备与餐厅参数
+-- 新版个人农场数值契约：从配表 Data 组装五物种、四品质、五阶装备与餐厅参数
 --!strict
 export type SpeciesId = "chicken" | "rabbit" | "sheep" | "cow" | "dragon"
 export type QualityId = "normal" | "golden" | "rainbow" | "giant"
 export type Species = {
-	id: SpeciesId, tier: number, name: string, foodName: string, health: number, interval: number,
-	hatchSeconds: number, weightKg: number, saleValue: number, unlockPrice: number,
-	packSeconds: number, instantHatchPrice: number,
+	id: number,
+	key: SpeciesId,
+	speciesId: SpeciesId,
+	tier: number,
+	name: string,
+	foodName: string,
+	name_t: string,
+	foodName_t: string,
+	description_t: string?,
+	health: number,
+	interval: number,
+	hatchSeconds: number,
+	weightKg: number,
+	saleValue: number,
+	unlockPrice: number,
+	packSeconds: number,
+	instantHatchPrice: number,
 }
 export type Quality = {
-	id: QualityId, probability: number, healthMultiplier: number, weightMultiplier: number,
-	valueMultiplier: number, hatchMultiplier: number, packMultiplier: number, visualScale: number,
+	id: number,
+	key: QualityId,
+	qualityId: QualityId,
+	tier: number,
+	name_t: string?,
+	description_t: string?,
+	colorHex: string?,
+	probability: number,
+	healthMultiplier: number,
+	weightMultiplier: number,
+	valueMultiplier: number,
+	hatchMultiplier: number,
+	packMultiplier: number,
+	visualScale: number,
 }
 export type Weapon = {
+	id: number?, tier: number?, name_t: string?, description_t: string?,
 	range: number, mode: "single" | "chain" | "cone", maximumTargets: number,
 	angleDegrees: number, chainRange: number, damage: number, damageIncrement: number,
 	price: number, enhancementPrices: { number },
 }
-export type Collector = { range: number, maximumItems: number, angleDegrees: number, price: number }
-export type Basket = { capacityKg: number, price: number }
-export type Restaurant = { workers: number, speed: number, price: number }
+export type Collector = {
+	id: number?, tier: number?, name_t: string?, description_t: string?,
+	range: number, maximumItems: number, angleDegrees: number, price: number,
+}
+export type Basket = {
+	id: number?, tier: number?, name_t: string?, description_t: string?,
+	capacityKg: number, price: number,
+}
+export type Restaurant = {
+	id: number?, level: number?, name_t: string?, description_t: string?,
+	workers: number, speed: number, price: number,
+}
+type DataRow = { [string]: any }
 
 local Config = {
 	Version = 1, -- 货物生成时保存的数值版本；后续更新不重算已有货物售价/重量
@@ -38,64 +75,254 @@ local Config = {
 	MaximumWeaponLevel = 5, -- 每件武器独立从 Lv.1 强化至 Lv.5
 }
 
--- 物种字段单位依次为 HP、秒、秒、kg、金币、金币、秒、金币；初始 T1 免费。
-Config.Species = {
-	{ id = "chicken", tier = 1, name = "Yellow Chicken", foodName = "Roast Chicken", health = 2, interval = 2.8, hatchSeconds = 3.5, weightKg = 1, saleValue = 10, unlockPrice = 0, packSeconds = 1.8, instantHatchPrice = 5 },
-	{ id = "rabbit", tier = 2, name = "Flying Rabbit", foodName = "Honey Roast Rabbit", health = 6, interval = 2.6, hatchSeconds = 3.7, weightKg = 3, saleValue = 50, unlockPrice = 300, packSeconds = 2.1, instantHatchPrice = 25 },
-	{ id = "sheep", tier = 3, name = "Woolly Sheep", foodName = "Herb Lamb Chop", health = 18, interval = 2.4, hatchSeconds = 4, weightKg = 9, saleValue = 250, unlockPrice = 1500, packSeconds = 2.5, instantHatchPrice = 125 },
-	{ id = "cow", tier = 4, name = "Mighty Cow", foodName = "Tomahawk Steak", health = 54, interval = 2.2, hatchSeconds = 4.3, weightKg = 27, saleValue = 1250, unlockPrice = 7500, packSeconds = 4.6, instantHatchPrice = 625 },
-	{ id = "dragon", tier = 5, name = "Lava Dragon", foodName = "Volcano Dragon Steak", health = 162, interval = 2, hatchSeconds = 4.6, weightKg = 81, saleValue = 6250, unlockPrice = 37500, packSeconds = 5.5, instantHatchPrice = 3125 },
-} :: { Species }
--- 普通外观覆色；未列出的部件沿用既有模型，品质表现在此后叠加。
-Config.SpeciesAppearance = {
-	chicken = { Body = "FFE78A", Head = "FFF4BF" },
-	dragon = { Body = "9B3527", Head = "CF4A2F", Leg = "CF4A2F", Tail = "9B3527", TailTip = "75302A", Jaw = "E58C45", Foot = "5D2922", Spine = "FFB646" },
-} :: { [string]: { [string]: string } }
--- 概率和为 1；视觉缩放与重量倍率独立，巨型外观 2.5 倍、血量/重量 4 倍。
-Config.Qualities = {
-	{ id = "normal", probability = 0.9, healthMultiplier = 1, weightMultiplier = 1, valueMultiplier = 1, hatchMultiplier = 1, packMultiplier = 1, visualScale = 1 },
-	{ id = "golden", probability = 0.08, healthMultiplier = 2, weightMultiplier = 2, valueMultiplier = 10, hatchMultiplier = 1.25, packMultiplier = 1.2, visualScale = 1 },
-	{ id = "rainbow", probability = 0.018, healthMultiplier = 3, weightMultiplier = 3, valueMultiplier = 24, hatchMultiplier = 1.5, packMultiplier = 1.4, visualScale = 1 },
-	{ id = "giant", probability = 0.002, healthMultiplier = 4, weightMultiplier = 4, valueMultiplier = 50, hatchMultiplier = 2, packMultiplier = 1.6, visualScale = 2.5 },
-} :: { Quality }
--- 射程/跳距为 studs，角度为完整射界，伤害为每发共享总量，费用为金币。
-Config.Weapons = {
-	{ range = 9, mode = "single", maximumTargets = 1, angleDegrees = 180, chainRange = 0, damage = 2, damageIncrement = 1, price = 0, enhancementPrices = { 30, 60, 100, 160 } },
-	{ range = 14, mode = "chain", maximumTargets = 4, angleDegrees = 180, chainRange = 10, damage = 6, damageIncrement = 3, price = 200, enhancementPrices = { 150, 300, 500, 800 } },
-	{ range = 22, mode = "cone", maximumTargets = 5, angleDegrees = 60, chainRange = 0, damage = 18, damageIncrement = 9, price = 1000, enhancementPrices = { 750, 1500, 2500, 4000 } },
-	{ range = 24, mode = "cone", maximumTargets = 7, angleDegrees = 90, chainRange = 0, damage = 54, damageIncrement = 27, price = 5000, enhancementPrices = { 3750, 7500, 12500, 20000 } },
-	{ range = 28, mode = "cone", maximumTargets = 9, angleDegrees = 120, chainRange = 0, damage = 162, damageIncrement = 81, price = 25000, enhancementPrices = { 18750, 37500, 62500, 100000 } },
-} :: { Weapon }
--- 拾取范围 studs，360 表示周围；成功拾取数才计入 maximumItems，费用为金币。
-Config.Collectors = {
-	{ range = 5.5, maximumItems = 1, angleDegrees = 360, price = 0 },
-	{ range = 9, maximumItems = 3, angleDegrees = 100, price = 110 },
-	{ range = 13, maximumItems = 5, angleDegrees = 360, price = 550 },
-	{ range = 16, maximumItems = 8, angleDegrees = 360, price = 2750 },
-	{ range = 20, maximumItems = 12, angleDegrees = 360, price = 13750 },
-} :: { Collector }
--- 鸡筐承重 kg，逐阶购买费为金币，独立于拾取工具。
-Config.Baskets = {
-	{ capacityKg = 12, price = 0 }, { capacityKg = 36, price = 140 },
-	{ capacityKg = 108, price = 700 }, { capacityKg = 324, price = 3500 },
-	{ capacityKg = 972, price = 17500 },
-} :: { Basket }
--- 接单时记录单人速度倍率；升级不追溯修改正在打包的订单，费用为金币。
-Config.Restaurants = {
-	{ workers = 1, speed = 1, price = 0 }, { workers = 1, speed = 1.35, price = 150 },
-	{ workers = 1, speed = 1.6, price = 750 }, { workers = 2, speed = 1.6, price = 3750 },
-	{ workers = 2, speed = 1.9, price = 18750 },
-} :: { Restaurant }
+-- Studio 读 GameConfig 子模块；离线 Lune 按源码相对路径加载同一份 Data。
+local function LoadRows(moduleName: string): { DataRow }
+	local loaded: any
+	if script then
+		local gameConfig = script.Parent:WaitForChild("GameConfig")
+		if moduleName == "SpeciesData" then
+			loaded = require(gameConfig:WaitForChild("SpeciesData"))
+		elseif moduleName == "QualityData" then
+			loaded = require(gameConfig:WaitForChild("QualityData"))
+		elseif moduleName == "WeaponData" then
+			loaded = require(gameConfig:WaitForChild("WeaponData"))
+		elseif moduleName == "CollectorData" then
+			loaded = require(gameConfig:WaitForChild("CollectorData"))
+		elseif moduleName == "BasketData" then
+			loaded = require(gameConfig:WaitForChild("BasketData"))
+		elseif moduleName == "RestaurantData" then
+			loaded = require(gameConfig:WaitForChild("RestaurantData"))
+		elseif moduleName == "SpeciesAppearanceData" then
+			loaded = require(gameConfig:WaitForChild("SpeciesAppearanceData"))
+		else
+			error("Unknown farm data module")
+		end
+	elseif moduleName == "SpeciesData" then
+		loaded = require("./GameConfig/SpeciesData")
+	elseif moduleName == "QualityData" then
+		loaded = require("./GameConfig/QualityData")
+	elseif moduleName == "WeaponData" then
+		loaded = require("./GameConfig/WeaponData")
+	elseif moduleName == "CollectorData" then
+		loaded = require("./GameConfig/CollectorData")
+	elseif moduleName == "BasketData" then
+		loaded = require("./GameConfig/BasketData")
+	elseif moduleName == "RestaurantData" then
+		loaded = require("./GameConfig/RestaurantData")
+	elseif moduleName == "SpeciesAppearanceData" then
+		loaded = require("./GameConfig/SpeciesAppearanceData")
+	else
+		error("Unknown farm data module")
+	end
+	assert(type(loaded) == "table", moduleName)
+	return loaded :: { DataRow }
+end
+local function NumberField(row: DataRow, field: string): number
+	local value = row[field]
+	assert(type(value) == "number", field)
+	return value :: number
+end
+local function StringField(row: DataRow, field: string): string
+	local value = row[field]
+	assert(type(value) == "string", field)
+	return value :: string
+end
+local function NumberList(row: DataRow, field: string): { number }
+	local value = row[field]
+	assert(type(value) == "table", field)
+	local source = value :: { any }
+	local result: { number } = {}
+	for index, item in source do
+		assert(type(item) == "number", field)
+		result[index] = item :: number
+	end
+	return result
+end
+local function SpeciesIdOf(value: string): SpeciesId
+	assert(value == "chicken" or value == "rabbit" or value == "sheep" or value == "cow" or value == "dragon", value)
+	return value :: SpeciesId
+end
+local function QualityIdOf(value: string): QualityId
+	assert(value == "normal" or value == "golden" or value == "rainbow" or value == "giant", value)
+	return value :: QualityId
+end
+local function WeaponMode(value: string): "single" | "chain" | "cone"
+	assert(value == "single" or value == "chain" or value == "cone", value)
+	return value :: "single" | "chain" | "cone"
+end
 
-function Config.GetSpecies(id: string): Species?
+-- 物种字段单位依次为 HP、秒、秒、kg、金币、金币、秒、金币；行顺序即阶位。
+local speciesList: { Species } = {}
+for index, row in LoadRows("SpeciesData") do
+	local tier = NumberField(row, "tier")
+	assert(tier == index, "Species tier must match row order")
+	local idNum = if row.id ~= nil then NumberField(row, "id") else index
+	local keyVal = SpeciesIdOf(StringField(row, "key"))
+	local nameVal = if row.name_t ~= nil then StringField(row, "name_t") else StringField(row, "name")
+	local foodNameVal = if row.foodName_t ~= nil then StringField(row, "foodName_t") else StringField(row, "foodName")
+	table.insert(speciesList, {
+		id = idNum,
+		key = keyVal,
+		speciesId = keyVal,
+		tier = tier,
+		name = nameVal,
+		foodName = foodNameVal,
+		name_t = nameVal,
+		foodName_t = foodNameVal,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		health = NumberField(row, "health"),
+		interval = NumberField(row, "interval"),
+		hatchSeconds = NumberField(row, "hatchSeconds"),
+		weightKg = NumberField(row, "weightKg"),
+		saleValue = NumberField(row, "saleValue"),
+		unlockPrice = NumberField(row, "unlockPrice"),
+		packSeconds = NumberField(row, "packSeconds"),
+		instantHatchPrice = NumberField(row, "instantHatchPrice"),
+	})
+end
+assert(#speciesList == 5, "Five species tiers are required")
+Config.Species = speciesList
+-- 普通外观覆色；优先读取 GameConfig.SpeciesAppearance，若未配置则回退到配表
+local appearance: { [string]: { [string]: string } } = {}
+local hasGameConfigAppearance = false
+if script and script.Parent then
+	local gameConfigMod = script.Parent:FindFirstChild("GameConfig")
+	if gameConfigMod and gameConfigMod:IsA("ModuleScript") then
+		local ok, gc = pcall(require, gameConfigMod)
+		if ok and type(gc) == "table" and gc.SpeciesAppearance then
+			appearance = gc.SpeciesAppearance
+			hasGameConfigAppearance = true
+		end
+	end
+end
+
+if not hasGameConfigAppearance then
+	for _, row in LoadRows("SpeciesAppearanceData") do
+		local speciesId: string
+		if type(row.speciesId) == "number" then
+			if row.speciesId == 1 then
+				speciesId = "chicken"
+			elseif row.speciesId == 5 then
+				speciesId = "dragon"
+			else
+				speciesId = tostring(row.speciesId)
+			end
+		else
+			speciesId = StringField(row, "speciesId")
+		end
+		if appearance[speciesId] == nil then
+			appearance[speciesId] = {}
+		end
+		local parts = appearance[speciesId] :: { [string]: string }
+		parts[StringField(row, "partName")] = StringField(row, "color")
+	end
+end
+Config.SpeciesAppearance = appearance
+-- 概率和为 1；视觉缩放与重量倍率独立，巨型外观 2.5 倍、血量/重量 4 倍。
+local qualities: { Quality } = {}
+local probability = 0
+for index, row in LoadRows("QualityData") do
+	local idNum = if row.id ~= nil then NumberField(row, "id") else index
+	local keyVal = QualityIdOf(StringField(row, "key"))
+	local quality: Quality = {
+		id = idNum,
+		key = keyVal,
+		qualityId = keyVal,
+		tier = if row.tier ~= nil then NumberField(row, "tier") else index,
+		name_t = if row.name_t ~= nil then StringField(row, "name_t") else nil,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		colorHex = if row.colorHex ~= nil then StringField(row, "colorHex") else nil,
+		probability = NumberField(row, "probability"),
+		healthMultiplier = NumberField(row, "healthMultiplier"),
+		weightMultiplier = NumberField(row, "weightMultiplier"),
+		valueMultiplier = NumberField(row, "valueMultiplier"),
+		hatchMultiplier = NumberField(row, "hatchMultiplier"),
+		packMultiplier = NumberField(row, "packMultiplier"),
+		visualScale = NumberField(row, "visualScale"),
+	}
+	probability += quality.probability
+	table.insert(qualities, quality)
+end
+assert(#qualities == 4 and math.abs(probability - 1) < 1e-9, "Quality probabilities must sum to 1")
+Config.Qualities = qualities
+-- 射程/跳距为 studs，角度为完整射界，伤害为每发共享总量，费用为金币。
+local weapons: { Weapon } = {}
+for index, row in LoadRows("WeaponData") do
+	local prices = NumberList(row, "enhancementPrices")
+	assert(#prices == Config.MaximumWeaponLevel - 1, "Each weapon lists four enhancement prices")
+	table.insert(weapons, {
+		id = if row.id ~= nil then NumberField(row, "id") else index,
+		tier = if row.tier ~= nil then NumberField(row, "tier") else index,
+		name_t = if row.name_t ~= nil then StringField(row, "name_t") else nil,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		range = NumberField(row, "range"),
+		mode = WeaponMode(StringField(row, "mode")),
+		maximumTargets = NumberField(row, "maximumTargets"),
+		angleDegrees = NumberField(row, "angleDegrees"),
+		chainRange = NumberField(row, "chainRange"),
+		damage = NumberField(row, "damage"),
+		damageIncrement = NumberField(row, "damageIncrement"),
+		price = NumberField(row, "price"),
+		enhancementPrices = prices,
+	})
+end
+assert(#weapons == 5, "Five weapon tiers are required")
+Config.Weapons = weapons
+-- 拾取范围 studs，360 表示周围；成功拾取数才计入 maximumItems，费用为金币。
+local collectors: { Collector } = {}
+for index, row in LoadRows("CollectorData") do
+	table.insert(collectors, {
+		id = if row.id ~= nil then NumberField(row, "id") else index,
+		tier = if row.tier ~= nil then NumberField(row, "tier") else index,
+		name_t = if row.name_t ~= nil then StringField(row, "name_t") else nil,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		range = NumberField(row, "range"),
+		maximumItems = NumberField(row, "maximumItems"),
+		angleDegrees = NumberField(row, "angleDegrees"),
+		price = NumberField(row, "price"),
+	})
+end
+assert(#collectors == 5, "Five collector tiers are required")
+Config.Collectors = collectors
+-- 鸡筐承重 kg，逐阶购买费为金币，独立于拾取工具。
+local baskets: { Basket } = {}
+for index, row in LoadRows("BasketData") do
+	table.insert(baskets, {
+		id = if row.id ~= nil then NumberField(row, "id") else index,
+		tier = if row.tier ~= nil then NumberField(row, "tier") else index,
+		name_t = if row.name_t ~= nil then StringField(row, "name_t") else nil,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		capacityKg = NumberField(row, "capacityKg"),
+		price = NumberField(row, "price"),
+	})
+end
+assert(#baskets == 5, "Five basket tiers are required")
+Config.Baskets = baskets
+-- 接单时记录单人速度倍率；升级不追溯修改正在打包的订单，费用为金币。
+local restaurants: { Restaurant } = {}
+for index, row in LoadRows("RestaurantData") do
+	table.insert(restaurants, {
+		id = if row.id ~= nil then NumberField(row, "id") else index,
+		level = if row.level ~= nil then NumberField(row, "level") else index,
+		name_t = if row.name_t ~= nil then StringField(row, "name_t") else nil,
+		description_t = if row.description_t ~= nil then StringField(row, "description_t") else nil,
+		workers = NumberField(row, "workers"),
+		speed = NumberField(row, "speed"),
+		price = NumberField(row, "price"),
+	})
+end
+assert(#restaurants == 5, "Five restaurant levels are required")
+Config.Restaurants = restaurants
+
+function Config.GetSpecies(id: any): Species?
 	for _, species in Config.Species do
-		if species.id == id then return species end
+		if species.id == id or species.key == id or tostring(species.id) == tostring(id) then return species end
 	end
 	return nil
 end
-function Config.GetQuality(id: string): Quality?
+function Config.GetQuality(id: any): Quality?
 	for _, quality in Config.Qualities do
-		if quality.id == id then return quality end
+		if quality.id == id or quality.key == id or tostring(quality.id) == tostring(id) then return quality end
 	end
 	return nil
 end
@@ -105,7 +332,7 @@ function Config.RollQuality(sample: number): QualityId
 	local cumulative = 0
 	for _, quality in Config.Qualities do
 		cumulative += quality.probability
-		if sample < cumulative then return quality.id end
+		if sample < cumulative then return quality.key end
 	end
 	return "giant"
 end

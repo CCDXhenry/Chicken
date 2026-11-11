@@ -34,7 +34,7 @@ function FarmRequest.Parse(value: unknown): Request?
 			local x, y, z = aim.x, aim.y, aim.z
 			if type(x) ~= "number" or type(y) ~= "number" or type(z) ~= "number" then return nil end
 			local length = math.sqrt(x*x+y*y+z*z)
-			if length ~= length or length < 0.5 or length > 2 then return nil end
+			if length ~= length or length < 1e-4 or length == math.huge then return nil end
 			request.aim = { x = x / length, y = y / length, z = z / length }
 		end
 		return request

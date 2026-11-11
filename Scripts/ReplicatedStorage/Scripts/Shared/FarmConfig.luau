@@ -47,6 +47,11 @@ local FarmConfig = {
 	ZoneHeightTolerance = 8, -- 交互区允许的垂直距离，studs
 	CharacterRootWait = 8, -- 等待角色根部件的超时，秒
 	SpawnHeight = 3.5, -- 角色生成点上方偏移，studs
+	CameraDefaultDistance = 16, -- 出生摄像机视距，studs
+	CameraPitchAngle = -15, -- 出生摄像机俯仰角，度（向下倾斜15度）
+	CameraHeightOffset = 2.5, -- 摄像机焦点相对 RootPart 高度偏移，studs
+	CameraMinZoomDistance = 0.5, -- 允许玩家缩放的最小视距，studs
+	CameraMaxZoomDistance = 128, -- 允许玩家缩放的最大视距，studs
 	AnimalTurnMinimumInterval = 0.65, -- 游荡转向最短间隔，秒
 	AnimalTurnMaximumInterval = 1.65, -- 游荡转向最长间隔，秒
 	EggLandingXMinimum = -11, -- 现有共享牧场落蛋区 X 最小坐标，studs
@@ -107,6 +112,8 @@ local FarmConfig = {
 		"FarmRestaurantShop",
 		"FarmNestLevel",
 		"FarmRestaurantLevel",
+		"FarmPlotId",
+		"FarmSpawnSequence",
 	},
 }
 

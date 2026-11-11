@@ -1,0 +1,48 @@
+--!strict
+return {
+	[1] = {
+		["id"] = 1,
+		["level"] = 1,
+		["name_t"] = "Farm Stall",
+		["description_t"] = "Single service window for casual passersby.",
+		["workers"] = 1,
+		["speed"] = 1,
+		["price"] = 0,
+	},
+	[2] = {
+		["id"] = 2,
+		["level"] = 2,
+		["name_t"] = "Roadside Diner",
+		["description_t"] = "Diner with 35% faster packaging pace.",
+		["workers"] = 1,
+		["speed"] = 1.35,
+		["price"] = 150,
+	},
+	[3] = {
+		["id"] = 3,
+		["level"] = 3,
+		["name_t"] = "Country Restaurant",
+		["description_t"] = "Country diner with 60% faster serving pace.",
+		["workers"] = 1,
+		["speed"] = 1.6,
+		["price"] = 750,
+	},
+	[4] = {
+		["id"] = 4,
+		["level"] = 4,
+		["name_t"] = "Gourmet Bistro",
+		["description_t"] = "Dual counter operation serving double customer flow.",
+		["workers"] = 2,
+		["speed"] = 1.6,
+		["price"] = 3750,
+	},
+	[5] = {
+		["id"] = 5,
+		["level"] = 5,
+		["name_t"] = "Grand Roast Palace",
+		["description_t"] = "Top-tier establishment with 90% peak packaging speed.",
+		["workers"] = 2,
+		["speed"] = 1.9,
+		["price"] = 18750,
+	},
+}

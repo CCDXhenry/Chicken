@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$Files,
 
@@ -79,8 +79,8 @@ if ($TargetFiles.Count -eq 0) {
 $StrictFiles = @()
 foreach ($file in $TargetFiles) {
     $normalized = $file.Replace("\", "/")
-    # 豁免第三方库和生成数据
-    if ($normalized -match "GameAnalytics" -or $normalized -match "GameConfig/") {
+    # 豁免第三方库，以及配表插件生成的 GameConfig/*Data.luau；init.luau 仍检查
+    if ($normalized -match "GameAnalytics" -or $normalized -match "/GameConfig/[^/]+Data\.luau$") {
         continue
     }
 
@@ -225,3 +225,4 @@ if ($targetErrors.Count -gt 0) {
     Write-Host "所有目标 --!strict 文件类型检测通过！(0 Error)" -ForegroundColor Green
     exit 0
 }
+

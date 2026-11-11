@@ -90,7 +90,9 @@ function FarmBusiness.TryUnlockSpecies(farm: FarmSave, speciesId: string): (bool
 	local species = Config.GetSpecies(speciesId)
 	if not species then return false, "invalidSpecies" end
 	if farm.unlockedSpecies[speciesId] then return true, nil end
-	if species.tier > 1 and not farm.unlockedSpecies[Config.Species[species.tier - 1].id] then return false, "previousSpeciesRequired" end
+	local prevSpecies = Config.Species[species.tier - 1]
+	local prevKey = if prevSpecies then (prevSpecies.key or tostring(prevSpecies.id)) else nil
+	if species.tier > 1 and (not prevKey or not farm.unlockedSpecies[prevKey]) then return false, "previousSpeciesRequired" end
 	if farm.cash < species.unlockPrice then return false, "insufficientCash" end
 	farm.cash -= species.unlockPrice
 	farm.unlockedSpecies[speciesId] = true

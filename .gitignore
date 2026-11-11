@@ -7,9 +7,9 @@
 # Existing SVN-managed files and external working copies.
 # Refresh this list when SVN takes ownership of additional files.
 /.cursorignore
-/ExcelData/Excel表格转json文件.bat
-/ExcelData/Excel表格转json文件.sh
-/GameLocalizationTables/GameLocalizationTable.csv
+/ExcelData/
+/GameLocalizationTables/
+/JsonData/
 /stylua.toml
 /Tools/excel2json/
 
@@ -28,6 +28,8 @@ sourcemap.json
 ~$*
 .DS_Store
 Thumbs.db
+/Assets/Studio/*test*.png
+/Assets/Studio/capture_*.png
 
 # Restore/build output inside the converter source tree.
 # SVN-managed converter runtime is excluded above with its external root.
