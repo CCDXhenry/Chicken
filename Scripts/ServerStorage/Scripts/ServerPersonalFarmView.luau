@@ -9,6 +9,7 @@ local Business = require(Shared:WaitForChild("FarmBusiness"))
 local Texts = require(Shared:WaitForChild("GameTexts"))
 local NumberFormat = require(Shared:WaitForChild("FarmNumberFormat"))
 local Scene = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerFarmSceneTool"))
+local WeaponBuilder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerWeaponBuilder"))
 local Types = require(script.Parent:WaitForChild("ServerPersonalFarmTypes"))
 type Session = Types.Session
 type Egg = Types.Egg
@@ -29,9 +30,10 @@ local function SetOwnership(instance: Instance, session: Session): ()
 	instance:SetAttribute("OwnerUserId", session.owner.UserId)
 	instance:SetAttribute("FarmId", session.plot.Name)
 end
-local function SetSign(part: BasePart, template: string, text: string, ownerId: number): ()
+local function SetSign(part: BasePart, template: string, text: string, ownerId: number, audience: string?): ()
 	part:SetAttribute("OwnerUserId", ownerId)
-	Scene.BindSign(part, template)
+	part:SetAttribute("FarmSignAudience", audience or "Public")
+	Scene.BindSign(part, template, nil, audience or "Public")
 	Scene.SetSignText(part, text)
 end
 local function UpdateBasketVisual(session: Session): ()
@@ -61,6 +63,49 @@ local function UpdateBasketVisual(session: Session): ()
 		if roast and roast:IsA("BasePart") then roast.Transparency = if index <= count then 0 else 1 end
 	end
 end
+local function UpdateWeaponVisual(session: Session): ()
+	local player, farm = session.owner, session.farm
+	local character = player.Character
+	if not character then return end
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
+	local tier = farm.equippedWeaponTier
+	local level = farm.weaponLevels[tostring(tier)] or 1
+	local backpack = player:FindFirstChildOfClass("Backpack")
+
+	local existingInChar = character:FindFirstChild("FarmWeapon")
+	local existingInBackpack = if backpack then backpack:FindFirstChild("FarmWeapon") else nil
+	local currentTool = (if existingInChar and existingInChar:IsA("Tool") then existingInChar else (if existingInBackpack and existingInBackpack:IsA("Tool") then existingInBackpack else nil)) :: Tool?
+
+	if currentTool then
+		local currentTier = currentTool:GetAttribute("WeaponTier")
+		local currentLevel = currentTool:GetAttribute("WeaponLevel")
+		if currentTier == tier and currentLevel == level then
+			if currentTool.Parent ~= character then
+				humanoid:EquipTool(currentTool)
+			end
+			return
+		end
+		currentTool:Destroy()
+	end
+
+	for _, item in character:GetChildren() do
+		if item:IsA("Tool") and item.Name == "FarmWeapon" then item:Destroy() end
+	end
+	if backpack then
+		for _, item in backpack:GetChildren() do
+			if item:IsA("Tool") and item.Name == "FarmWeapon" then item:Destroy() end
+		end
+	end
+
+	local tool = WeaponBuilder.BuildWeaponTool(tier, level)
+	if backpack then
+		tool.Parent = backpack
+		humanoid:EquipTool(tool)
+	else
+		tool.Parent = character
+	end
+end
 local function UpdateRestaurantVisuals(session: Session, waiting: number, processing: number, expected: number): ()
 	local player, farm = session.owner, session.farm
 	local restaurant = session.map:FindFirstChild("Restaurant")
@@ -88,11 +133,26 @@ local function UpdateRestaurantVisuals(session: Session, waiting: number, proces
 			for index = 1, Config.Restaurants[farm.restaurantLevel].workers do
 				local name = "Worker" .. index
 				local model = workers:FindFirstChild(name)
+				local spot = restaurant:FindFirstChild("WorkerSpot" .. index) or restaurant:FindFirstChild("Worker" .. index .. "Spot")
+				local targetCFrame: CFrame
+				if spot and spot:IsA("BasePart") then
+					spot.Transparency = 1
+					targetCFrame = spot.CFrame
+				else
+					local counter = restaurant:FindFirstChild("ServiceCounter" .. index)
+					local counterPos: Vector3
+					if counter and counter:IsA("BasePart") then
+						counterPos = counter.Position
+					else
+						counterPos = head.Position + forward * 4.05 + right * ((index - 1) * 5.1)
+					end
+					local standPosition = Vector3.new(counterPos.X, head.Position.Y + 0.1, counterPos.Z) + forward * 2.0
+					targetCFrame = CFrame.lookAt(standPosition, Vector3.new(counterPos.X, head.Position.Y + 0.1, counterPos.Z))
+				end
 				if not model then
 					local clone = template:Clone()
 					clone.Name = name
-					local position = head.Position + forward * 2.5 + right * ((index - 1) * 3) + Vector3.yAxis * 0.1
-					clone:PivotTo(CFrame.lookAt(position, position - forward))
+					clone:PivotTo(targetCFrame)
 					SetOwnership(clone, session)
 					clone.Parent = workers
 					model = clone
@@ -108,6 +168,7 @@ local function UpdateRestaurantVisuals(session: Session, waiting: number, proces
 end
 local function Project(session: Session, egg: Egg?, now: number): ()
 	UpdateBasketVisual(session)
+	UpdateWeaponVisual(session)
 	local player, farm = session.owner, session.farm
 	local waiting, processing, expected = Business.GetKitchenCounts(farm)
 	player:SetAttribute("FarmStage", 5)
@@ -128,7 +189,7 @@ local function Project(session: Session, egg: Egg?, now: number): ()
 	player:SetAttribute("FarmExpectedValue", expected)
 	local selected = Config.GetSpecies(farm.selectedSpeciesId)
 	player:SetAttribute("FarmNestLevel", if selected then selected.tier else 1)
-	for _, species in Config.Species do player:SetAttribute("FarmSpecies_" .. species.id, farm.unlockedSpecies[species.id] == true) end
+	for _, species in Config.Species do player:SetAttribute("FarmSpecies_" .. species.key, farm.unlockedSpecies[species.key] == true) end
 	player:SetAttribute("FarmRestaurantLevel", farm.restaurantLevel)
 	local eggSpecies = if egg then Config.GetSpecies(egg.speciesId) else nil
 	player:SetAttribute("FarmEggSpecies", if eggSpecies then eggSpecies.name else nil)
@@ -186,5 +247,6 @@ View.ApplySpecies = ApplySpecies
 View.SetSign = SetSign
 View.ApplyQuality = ApplyQuality
 View.UpdateQuality = UpdateQuality
+View.UpdateWeaponVisual = UpdateWeaponVisual
 View.Project = Project
 return View

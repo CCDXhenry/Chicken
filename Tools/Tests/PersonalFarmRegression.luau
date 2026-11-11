@@ -173,6 +173,10 @@ local success, failure = xpcall(function(): boolean
 	assert(prompt)
 	manager:OnCommand(first.owner, { action = "confirm", confirmationId = "wrong-token" })
 	assert(first.farm.cash == 300)
+	-- 模拟在确认弹窗开启期间后台下蛋循环生成新蛋，确认操作仍需一次生效
+	first.nextEggAt = 0
+	manager:Update(os.clock(), 0)
+	assert(#first.eggs > 0)
 	manager:OnCommand(first.owner, { action = "confirm", confirmationId = prompt.id })
 	assert(CountPopulation(first) == 0 and first.farm.cash == 0 and SelectedSpecies(first) == "rabbit")
 	assert(#first.farm.basket == 1 and first.ground["keep-ground"] ~= nil)

@@ -23,6 +23,7 @@ local Builder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManage
 
 local Types = require(script.Parent:WaitForChild("ServerPersonalFarmTypes"))
 local View = require(script.Parent:WaitForChild("ServerPersonalFarmView"))
+local FarmSoundTool = require(Shared:WaitForChild("FarmSoundTool"))
 local Village = require(script.Parent:WaitForChild("ServerFarmVillageTool"))
 local VillageConfig = require(Shared:WaitForChild("FarmVillageConfig"))
 type Egg = Types.Egg
@@ -86,7 +87,13 @@ local function PositionCharacter(session: Session, character: Model): ()
 		local root = character:WaitForChild("HumanoidRootPart", FarmConfig.CharacterRootWait)
 		if root and session.scope.alive and not session.frozen and session.owner.Character == character then
 			local spawn = session.map:FindFirstChild("FarmSpawn")
-			if spawn and spawn:IsA("BasePart") then character:PivotTo(spawn.CFrame * CFrame.new(0, FarmConfig.SpawnHeight, 0)) end
+			if spawn and spawn:IsA("BasePart") then
+				character:PivotTo(spawn.CFrame * CFrame.new(0, FarmConfig.SpawnHeight, 0))
+				local currentSeq = session.owner:GetAttribute("FarmSpawnSequence")
+				local seq = (if typeof(currentSeq) == "number" then currentSeq else 0) + 1
+				session.owner:SetAttribute("FarmSpawnSequence", seq)
+			end
+			Project(session)
 		end
 	end)
 end
@@ -109,18 +116,20 @@ local function SpawnEgg(session: Session, now: number): ()
 	SetOwnership(model, session)
 	local id = HttpService:GenerateGUID(false)
 	model:SetAttribute("EntityId", id)
-	model:SetAttribute("SpeciesId", species.id)
+	model:SetAttribute("SpeciesId", species.key)
 	model:SetAttribute("QualityId", qualityId)
 	local shell = Scene.CreatePiece(model, "Shell", Vector3.new(1.35, 1.73, 1.35), CFrame.new(originPart.Position), "FFF0CF", true)
 	model.PrimaryPart = shell
+	shell:SetAttribute("FarmSignAudience", "Public")
 	ApplyQuality(model, qualityId)
 	model:SetAttribute("HatchStartTime", workspace:GetServerTimeNow() + Config.EggFlightSeconds)
 	model:SetAttribute("HatchDuration", species.hatchSeconds * quality.hatchMultiplier)
 	model:SetAttribute("HatchEndTime", workspace:GetServerTimeNow() + Config.EggFlightSeconds + species.hatchSeconds * quality.hatchMultiplier)
 	model:SetAttribute("HatchAccelerationSequence", 0)
 	model.Parent = GetFolder(session.map, "Eggs")
-	local egg: Egg = { id = id, model = model, speciesId = species.id, qualityId = qualityId, height = 0.865 * quality.visualScale, origin = originPart.Position, landing = landing, started = now, landAt = now + Config.EggFlightSeconds, finish = now + Config.EggFlightSeconds + species.hatchSeconds * quality.hatchMultiplier, committed = false }
+	local egg: Egg = { id = id, model = model, speciesId = species.key, qualityId = qualityId, height = 0.865 * quality.visualScale, origin = originPart.Position, landing = landing, started = now, landAt = now + Config.EggFlightSeconds, finish = now + Config.EggFlightSeconds + species.hatchSeconds * quality.hatchMultiplier, committed = false }
 	table.insert(session.eggs, egg)
+	FarmSoundTool.Play("EggSpawn", originPart.Position)
 	GetMetrics(session).spawned += 1
 	GetMetrics(session)[qualityId .. "Eggs"] += 1
 end
@@ -140,7 +149,7 @@ local function SpawnAnimal(session: Session, egg: Egg): ()
 	model:SetAttribute("MaxHealth", health)
 	local primary = model.PrimaryPart
 	if primary then
-		SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, egg.qualityId, NumberFormat.Number(health), NumberFormat.Number(health)), session.owner.UserId)
+		SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, egg.qualityId, NumberFormat.Number(health), NumberFormat.Number(health)), session.owner.UserId, "Public")
 		Scene.SetHealthTone(primary, false)
 		primary:SetAttribute("FarmStudsOffsetY", 2 * quality.visualScale)
 	end
@@ -159,6 +168,7 @@ local function HatchEgg(session: Session, egg: Egg, now: number, price: number?)
 	table.remove(session.eggs, index)
 	SpawnAnimal(session, egg)
 	egg.model:Destroy()
+	FarmSoundTool.Play("EggHatch", egg.landing)
 	if price then
 		session.farm.cash = remainingCash
 		session.farm.revision += 1
@@ -187,15 +197,19 @@ local function UpdateProduction(session: Session, now: number, dt: number): ()
 			local t = math.clamp((now - egg.started) / Config.EggFlightSeconds, 0, 1)
 			egg.model:PivotTo(CFrame.new(egg.origin:Lerp(egg.landing + Vector3.yAxis * egg.height, t) + Vector3.yAxis * math.sin(t * math.pi) * FarmConfig.EggArcHeight))
 		else
+			if not egg.model:GetAttribute("HasLanded") then
+				egg.model:SetAttribute("HasLanded", true)
+				FarmSoundTool.Play("EggLand", egg.landing)
+			end
 			egg.model:PivotTo(CFrame.new(egg.landing + Vector3.yAxis * egg.height))
 			local shell = egg.model.PrimaryPart
 			local eggSpecies = Config.GetSpecies(egg.speciesId)
-			if shell and eggSpecies then SetSign(shell, "EggSignGui", Texts.Farm.QualityEggCountdown.source:format(eggSpecies.name, egg.qualityId, math.max(0, math.ceil(egg.finish - now))), session.owner.UserId) end
+			if shell and eggSpecies then SetSign(shell, "EggSignGui", Texts.Farm.QualityEggCountdown.source:format(eggSpecies.name, egg.qualityId, math.max(0, math.ceil(egg.finish - now))), session.owner.UserId, "Public") end
 		end
 	end
 	local nest = session.map:WaitForChild("Nest"):FindFirstChild("ProductionSign")
 	if nest and nest:IsA("BasePart") then
-		SetSign(nest, "NestSignGui", Texts.Farm.NestStatus.source:format(species.tier, species.name, if count >= Config.PopulationCapacity then Texts.Farm.PopulationFull.source else Texts.Farm.NextEgg.source:format(math.max(0, math.ceil(session.nextEggAt - now)))), session.owner.UserId)
+		SetSign(nest, "NestSignGui", Texts.Farm.NestStatus.source:format(species.tier, species.name, if count >= Config.PopulationCapacity then Texts.Farm.PopulationFull.source else Texts.Farm.NextEgg.source:format(math.max(0, math.ceil(session.nextEggAt - now)))), session.owner.UserId, "Public")
 	end
 end
 local function UpdateAnimals(session: Session, now: number, dt: number): ()
@@ -210,6 +224,7 @@ local function UpdateAnimals(session: Session, now: number, dt: number): ()
 				animal.direction = away.Unit
 				animal.fleeUntil = now + Config.AnimalFleeSeconds
 				animal.fleeReadyAt = animal.fleeUntil + Config.AnimalFleeSeconds
+				FarmSoundTool.Play("AnimalScared", animal.pos)
 			end
 		end
 		if now >= animal.nextTurn and now >= animal.fleeUntil then
@@ -250,7 +265,10 @@ local function UpdateInventory(session: Session, now: number, dt: number): ()
 			deposited = true
 		end
 		session.nextUnloadAt = nextUnloadAt
-		if deposited then MarkChanged(session) end
+		if deposited then
+			FarmSoundTool.Play("Delivery", sell.Position)
+			MarkChanged(session)
+		end
 	else
 		session.nextUnloadAt = nil
 	end
@@ -270,21 +288,40 @@ local function CookAnimal(session: Session, animal: Animal): ()
 	model:SetAttribute("ItemId", cargo.itemId)
 	model:SetAttribute("SpeciesId", cargo.speciesId)
 	model:SetAttribute("QualityId", cargo.qualityId)
+	model:SetAttribute("WeightKg", cargo.weightKg)
+	model:SetAttribute("SaleValue", cargo.saleValue)
+	model:SetAttribute("ExpiresAt", workspace:GetServerTimeNow() + Config.GroundLifetimeSeconds)
+	model:SetAttribute("Lifetime", Config.GroundLifetimeSeconds)
 	local pos = animal.pos + Vector3.yAxis * 0.53
 	model:PivotTo(CFrame.new(pos))
 	model.Parent = GetFolder(session.map, "CookedFood")
 	session.ground[cargo.itemId] = { model = model, pos = pos, cargo = cargo, expiresAt = os.clock() + Config.GroundLifetimeSeconds }
+	FarmSoundTool.Play("FoodDrop", pos)
+	local primary = model.PrimaryPart
+	if primary then
+		local quality = Config.GetQuality(animal.qualityId)
+		local visualScale = if quality then quality.visualScale else 1
+		primary:SetAttribute("FarmStudsOffsetY", 2.0 * visualScale)
+		SetSign(primary, "CookedFoodSignGui", "", session.owner.UserId)
+	end
 end
 local function Zap(session: Session, root: BasePart, aim: Vector3?): ()
 	local candidates: { CombatRules.Candidate } = {}
 	for _, animal in session.animals do
 		table.insert(candidates, { id = animal.id, x = animal.pos.X, y = animal.pos.Y, z = animal.pos.Z, health = animal.health })
 	end
-	local direction = Scene.FlatVector(aim or root.CFrame.LookVector)
-	if direction.Magnitude < 0.01 then direction = Scene.FlatVector(root.CFrame.LookVector) end
-	if direction.Magnitude < 0.01 then return end
 	local farm = session.farm
-	local hits = CombatRules.ResolveShot(farm.equippedWeaponTier, farm.weaponLevels[tostring(farm.equippedWeaponTier)], root.Position.X, root.Position.Y, root.Position.Z, direction.X, direction.Z, candidates)
+	-- 范围攻击以玩家为中心：全向 360 度索敌
+	local hits = CombatRules.ResolveShot(
+		farm.equippedWeaponTier,
+		farm.weaponLevels[tostring(farm.equippedWeaponTier)],
+		root.Position.X,
+		root.Position.Y,
+		root.Position.Z,
+		nil,
+		nil,
+		candidates
+	)
 	if #hits == 0 then NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.AimHint.source); return end
 	local from = root.Position
 	local total, cooked = 0, 0
@@ -299,7 +336,7 @@ local function Zap(session: Session, root: BasePart, aim: Vector3?): ()
 			local species = Config.GetSpecies(animal.speciesId)
 			local primary = animal.model.PrimaryPart
 			if species and primary then
-				SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, animal.qualityId, NumberFormat.Number(animal.health), NumberFormat.Number(animal.maxHealth)), session.owner.UserId)
+				SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, animal.qualityId, NumberFormat.Number(animal.health), NumberFormat.Number(animal.maxHealth)), session.owner.UserId, "Public")
 				Scene.SetHealthTone(primary, true)
 			end
 		end
@@ -332,15 +369,15 @@ end
 local function RequestSpecies(session: Session, speciesId: string, now: number): ()
 	local species = Config.GetSpecies(speciesId)
 	if not species or speciesId == session.farm.selectedSpeciesId then return end
-	if species.tier > 1 and not session.farm.unlockedSpecies[Config.Species[species.tier - 1].id] then return end
+	local prevSpecies = Config.Species[species.tier - 1]
+	local prevKey = (prevSpecies :: any).key or (prevSpecies :: any).speciesId or tostring(prevSpecies.id)
+	if species.tier > 1 and not session.farm.unlockedSpecies[prevKey] then return end
 	local price = if session.farm.unlockedSpecies[speciesId] then 0 else species.unlockPrice
 	if session.farm.cash < price then NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.PersonalNeedCoins.source:format(NumberFormat.Number(price - session.farm.cash))); return end
-	local ids: { [string]: boolean } = {}
-	for _, egg in session.eggs do ids[egg.id] = true end
-	for id in session.animals do ids[id] = true end
-	if not next(ids) and price == 0 then ClearConfirmation(session); ApplySpecies(session, speciesId, now); return end
+	local hasEntities = #session.eggs > 0 or next(session.animals) ~= nil
+	if not hasEntities and price == 0 then ClearConfirmation(session); ApplySpecies(session, speciesId, now); return end
 	local normalShots, goldenShots, fits = Business.GetSpeciesRisk(session.farm, speciesId)
-	local confirmation: Confirmation = { id = HttpService:GenerateGUID(false), kind = "species", speciesId = speciesId, previousSpeciesId = session.farm.selectedSpeciesId, expiresAt = now + ConfirmationSeconds, entityIds = ids }
+	local confirmation: Confirmation = { id = HttpService:GenerateGUID(false), kind = "species", speciesId = speciesId, previousSpeciesId = session.farm.selectedSpeciesId, expiresAt = now + ConfirmationSeconds }
 	session.confirmation = confirmation
 	session.owner:SetAttribute("FarmConfirmMessage", Texts.Farm.SpeciesConfirm.source:format(species.name, NumberFormat.Number(price)))
 	session.owner:SetAttribute("FarmConfirmRisk", Texts.Farm.SpeciesRisk.source:format(normalShots, goldenShots, fits))
@@ -359,15 +396,15 @@ local function ConfirmSpecies(session: Session, confirmationId: string, now: num
 	end
 	local speciesId = confirmation.speciesId
 	if not speciesId or confirmation.previousSpeciesId ~= session.farm.selectedSpeciesId then ClearConfirmation(session); return end
-	local changed = false
-	for _, egg in session.eggs do if not confirmation.entityIds[egg.id] then changed = true end end
-	for id in session.animals do if not confirmation.entityIds[id] then changed = true end end
-	ClearConfirmation(session)
-	if changed then
-		NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.ConfirmationExpired.source)
-		RequestSpecies(session, speciesId, now)
+	local species = Config.GetSpecies(speciesId)
+	if not species then ClearConfirmation(session); return end
+	local price = if session.farm.unlockedSpecies[speciesId] then 0 else species.unlockPrice
+	if session.farm.cash < price then
+		ClearConfirmation(session)
+		NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.PersonalNeedCoins.source:format(NumberFormat.Number(price - session.farm.cash)))
 		return
 	end
+	ClearConfirmation(session)
 	ApplySpecies(session, speciesId, now)
 end
 local function RequestInstantHatch(session: Session, targetId: string, now: number): ()
@@ -487,6 +524,13 @@ function Manager.RemovePlayer(self: ServerPersonalFarmManager, player: Player): 
 		local character = player.Character
 		local basket = if character then character:FindFirstChild("ChickenBasket") else nil
 		if basket then basket:Destroy() end
+		local weapon = if character then character:FindFirstChild("FarmWeapon") else nil
+		if weapon then weapon:Destroy() end
+		local backpack = player:FindFirstChildOfClass("Backpack")
+		if backpack then
+			local bpWeapon = backpack:FindFirstChild("FarmWeapon")
+			if bpWeapon then bpWeapon:Destroy() end
+		end
 	end
 	if self.running then for waitingPlayer in self.waiting do self:OnPlayerLoaded(waitingPlayer) end end
 end
@@ -578,7 +622,10 @@ function Manager.Update(self: ServerPersonalFarmManager, now: number, dt: number
 		if sold > 0 and metrics.firstSaleSeconds < 0 then metrics.firstSaleSeconds = os.clock() - metrics.startedAt end
 		if session.farm.cash >= Config.Weapons[1].enhancementPrices[1] and metrics.firstAffordEnhancementSeconds < 0 then metrics.firstAffordEnhancementSeconds = os.clock() - metrics.startedAt end
 		if session.farm.revision ~= revision then MarkChanged(session) end
-		if sold > 0 then NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.PersonalSold.source:format(sold, NumberFormat.Number(income)), "sale") end
+		if sold > 0 then
+			FarmSoundTool.Play("PackageDone", session.plot.Position)
+			NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.PersonalSold.source:format(sold, NumberFormat.Number(income)), "sale")
+		end
 		Project(session)
 	end
 end

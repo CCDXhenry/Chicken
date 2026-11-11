@@ -7,7 +7,7 @@ local Lifecycle = require(Shared:WaitForChild("LifecycleTool"))
 
 export type Egg = { id: string, model: Model, speciesId: string, qualityId: string, height: number, origin: Vector3, landing: Vector3, started: number, landAt: number, finish: number, committed: boolean }
 export type Animal = { id: string, model: Model, speciesId: string, qualityId: string, pos: Vector3, center: Vector3, direction: Vector3, nextTurn: number, health: number, maxHealth: number, fleeUntil: number, fleeReadyAt: number }
-export type Confirmation = { id: string, kind: "species" | "hatch", speciesId: string?, previousSpeciesId: string?, targetId: string?, expiresAt: number, entityIds: { [string]: boolean } }
+export type Confirmation = { id: string, kind: "species" | "hatch", speciesId: string?, previousSpeciesId: string?, targetId: string?, expiresAt: number, entityIds: { [string]: boolean }? }
 export type GroundCargo = { model: Model, pos: Vector3, cargo: Save.Cargo, expiresAt: number }
 export type FarmMetrics = {
 	[string]: number,

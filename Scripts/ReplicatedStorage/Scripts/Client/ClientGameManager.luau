@@ -5,12 +5,11 @@ local players: Players = game:GetService("Players")
 local starterGui: StarterGui = game:GetService("StarterGui")
 local core = replicatedStorage:WaitForChild("Core")
 local coreScripts = core:WaitForChild("Scripts")
-local coreSharedScripts = coreScripts:WaitForChild("Shared")
-local SoundTool = require(coreSharedScripts:FindFirstChild("SoundTool"))
 local coreClientScripts = coreScripts:WaitForChild("Client")
 local UIAdapter = require(coreClientScripts:FindFirstChild("UIAdapter"))
 local scripts = replicatedStorage:WaitForChild("Scripts")
 local sharedScripts = scripts:WaitForChild("Shared")
+local FarmSoundTool = require(sharedScripts:WaitForChild("FarmSoundTool"))
 local GameConfig = require(sharedScripts:FindFirstChild("GameConfig"))
 local NetMsg = require(sharedScripts:FindFirstChild("NetMsg"))
 local clientScripts = scripts:WaitForChild("Client")
@@ -20,11 +19,9 @@ type ClientRoastChickenFarmManager = ClientRoastChickenFarmManager.ClientRoastCh
 local uiManagerScript = clientScripts:WaitForChild("UIManager")
 local UIManager = require(uiManagerScript)
 
-local soundsFolder = workspace:FindFirstChild("Sounds") or replicatedStorage:FindFirstChild("Sounds")
-local bgmSound: Sound = (if soundsFolder then soundsFolder:FindFirstChild("BGM") else nil) :: Sound
-
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local ClientBillboardManager = require(clientScripts:WaitForChild("ClientBillboardManager"))
+local ClientCameraController = require(clientScripts:WaitForChild("ClientCameraController"))
 local ClientGameManager = {}
 ClientGameManager.__index = ClientGameManager
 
@@ -32,6 +29,7 @@ export type ClientGameManager = typeof(setmetatable(
 	{} :: {
 		roastChickenFarmManager: ClientRoastChickenFarmManager,
 		billboardManager: ClientBillboardManager.ClientBillboardManager,
+		cameraController: ClientCameraController.ClientCameraController,
 		scope: LifecycleTool.Lifecycle?,
 		screenGui: ScreenGui?,
 		initialized: boolean,
@@ -52,12 +50,10 @@ local function OnNotifyPlayerInfoInit(
 	ClientGameInfo.InitPlayerInfo(localPlayerSaveInfo, otherPlayerSaveInfoMap, playerConfigInfo)
 	local localPlayerInfo: GameConfig.ClientLocalPlayerInfo? = ClientGameInfo.GetLocalPlayerInfo()
 	if localPlayerInfo ~= nil then
-		SoundTool.SetBGMVolumn(localPlayerInfo.settingInfo.bgmVolume)
-		SoundTool.SetSoundEffectVolume(localPlayerInfo.settingInfo.soundEffectVolume)
+		FarmSoundTool.SetBGMVolume(localPlayerInfo.settingInfo.bgmVolume)
+		FarmSoundTool.SetSoundEffectVolume(localPlayerInfo.settingInfo.soundEffectVolume)
 	end
-	if bgmSound then
-		SoundTool.PlayBGM(bgmSound)
-	end
+	FarmSoundTool.PlayBGM()
 end
 
 local function OnNotifyPlayersOtherPlayerInfoInit(playerId: number, otherPlayerSaveInfo: GameConfig.ClientOtherPlayerSyncInfo): ()
@@ -74,6 +70,7 @@ function ClientGameManager.new(): ClientGameManager
 	local self = setmetatable({}, ClientGameManager) :: ClientGameManager
 	self.roastChickenFarmManager = ClientRoastChickenFarmManager.new()
 	self.billboardManager = ClientBillboardManager.new()
+	self.cameraController = ClientCameraController.new()
 	self.initialized = false
 	return self
 end
@@ -107,6 +104,7 @@ function ClientGameManager.Init(self: ClientGameManager): ()
 	end
 	scope:Connect(screenGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(OnViewportChanged))
 	self.billboardManager:Init()
+	self.cameraController:Init()
 	self.roastChickenFarmManager:Init(screenGui)
 end
 function ClientGameManager.Destroy(self: ClientGameManager): ()
@@ -115,6 +113,7 @@ function ClientGameManager.Destroy(self: ClientGameManager): ()
 	end
 	self.initialized = false
 	self.roastChickenFarmManager:Destroy()
+	self.cameraController:Destroy()
 	self.billboardManager:Destroy()
 	UIManager.Destroy()
 	if self.scope then
