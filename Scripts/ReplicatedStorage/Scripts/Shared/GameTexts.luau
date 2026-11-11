@@ -5,6 +5,8 @@ local GameTexts = {
 	ZapNames = { "Basic rod", "Chain zapper", "Area cannon", "Wide cannon", "Pulse cannon" },
 	CollectNames = { "Pickup gloves", "Scoop", "Collector", "Power collector", "Magnet collector" },
 	Farm = {
+		VillageVacant = { key = "FarmVillageVacant", source = "%s · Vacant farm" },
+		VillageOwner = { key = "FarmVillageOwner", source = "%s · %s's farm" },
 		FarmUIWeaponName = { key = "FarmUIWeaponName", source = "Tier %d weapon" },
 		FarmUIWeaponLevel = { key = "FarmUIWeaponLevel", source = "Tier %d  /  Level %d" },
 		FarmUICurrentDamage = { key = "FarmUICurrentDamage", source = "Current damage  %s" },

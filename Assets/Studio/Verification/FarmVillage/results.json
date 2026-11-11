@@ -1,0 +1,65 @@
+{
+  "staticAudit": {
+    "returnValue": "{\"farmsInstances\":4136,\"publicInstances\":34,\"publicCollisions\":22,\"noOverlaps\":true,\"entryCorridorsClear\":true,\"farmParts\":3672,\"templateParts\":459,\"plots\":8,\"publicParts\":33,\"templateCollisions\":57,\"farmCollisions\":456,\"maxPlayers\":60}",
+    "message": "Code executed successfully",
+    "success": true,
+    "output": []
+  },
+  "personalRuntime": {
+    "ok": true,
+    "bridge": "ok",
+    "result": "[\"Independent production and entity ownership\",\"Independent 28 entity caps\",\"Animals remain inside each rotated local pasture\",\"Foreign combat and pickup rejected; owned cargo keeps identity\",\"First unload waits 0.15 seconds; first sale 10; repeated settlement rejected\",\"Opposite rotated farms both finish kill, pickup, delivery and independent sale\",\"Species confirmation cancel/replay safety; clear preserves ground and basket; free T1 recovery waits full interval\",\"Owned landed golden rabbit: free acceleration cooldown, foreign request rejection and exactly one 25 coin instant hatch\",\"Actual T2 Lv3 chain kills 6+6; directional collector skips 27 kg item and collects both valid rabbits\",\"Freeze blocks operations; release clears runtime entities, preserves static map and frees plot\"]",
+    "output": []
+  },
+  "villageRuntime": {
+    "ok": true,
+    "bridge": "ok",
+    "result": "[\"Eight static farms and eight anchors\",\"Unique live ownership on opposite road sides\",\"Opposite farm orientation\",\"Rotated local spawn anchor: Plot01\",\"Rotated local spawn anchor: Plot02\",\"Visiting neighbor cannot unload into foreign restaurant\",\"Foreign egg ID rejected by live manager\",\"Release preserves static farm and clears owner\",\"Release removes all production and ground entities\",\"Vacancy restores public sign and removes workers\",\"Neighbor session survives release\",\"Lowest released plot reclaimed without cloning buildings\",\"Duplicate loaded callback cannot create another farm\"]",
+    "output": []
+  },
+  "clientRuntime": {
+    "ok": true,
+    "bridge": "ok",
+    "result": "{\"signsRestored\":true,\"note\":\"Client-only removal/rearrival fixture; does not force engine stream-out\",\"entriesRestored\":true}",
+    "output": []
+  },
+  "scriptSync": [
+    {
+      "path": "ServerStorage/Scripts/ServerFarmVillageTool",
+      "match": true
+    },
+    {
+      "path": "ServerStorage/Scripts/ServerPersonalFarmManager",
+      "match": true
+    },
+    {
+      "path": "ReplicatedStorage/Scripts/Shared/FarmVillageConfig",
+      "match": true
+    },
+    {
+      "path": "ReplicatedStorage/Scripts/Shared/GameTexts",
+      "match": true
+    },
+    {
+      "path": "ReplicatedStorage/Scripts/Client/ClientBillboardManager",
+      "match": true
+    },
+    {
+      "path": "ReplicatedStorage/Scripts/Client/ClientFarmSpeciesManager",
+      "match": true
+    }
+  ],
+  "offline": {
+    "existingChecks": 210,
+    "villageChecks": 39
+  },
+  "strict": {
+    "targetFiles": 10,
+    "errors": 0
+  },
+  "lifecycle": {
+    "disconnect": "Player2 released Plot02; eight buildings retained",
+    "join": "Player3 claimed Plot02",
+    "respawn": "Owned farm spawn and public signs retained"
+  }
+}

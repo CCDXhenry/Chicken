@@ -1,5 +1,7 @@
 {
   "dynamic": {
+    "FarmVillageVacant": "{1} · 空置农场",
+    "FarmVillageOwner": "{1} · {2}的农场",
 	"FarmPersonalSold": "售出 {1}份 · +{2}金币",
 	"FarmPersonalNeedCoins": "还需要 {1}金币",
 	"FarmZapTouch": "电击",

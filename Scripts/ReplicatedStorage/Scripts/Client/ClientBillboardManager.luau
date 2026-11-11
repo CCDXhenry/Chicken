@@ -134,7 +134,7 @@ end
 
 function ClientBillboardManager.Refresh(self: ClientBillboardManager, part: BasePart): ()
 	local ownerId = part:GetAttribute("OwnerUserId")
-	if typeof(ownerId) == "number" and ownerId ~= Players.LocalPlayer.UserId then
+	if part:GetAttribute("FarmSignAudience") ~= "Public" and typeof(ownerId) == "number" and ownerId ~= Players.LocalPlayer.UserId then
 		self:Release(part)
 		return
 	end
@@ -160,6 +160,7 @@ function ClientBillboardManager.TrackPart(self: ClientBillboardManager, part: Ba
 	end
 	partScope:Connect(part:GetAttributeChangedSignal("FarmSign"):Connect(OnSignChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("OwnerUserId"):Connect(OnSignChanged))
+	partScope:Connect(part:GetAttributeChangedSignal("FarmSignAudience"):Connect(OnSignChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmText"):Connect(OnDetailChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmHealthTone"):Connect(OnDetailChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmStudsOffsetY"):Connect(OnDetailChanged))

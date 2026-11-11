@@ -31,7 +31,7 @@ local Controllers: { [string]: { Bind: (Common.Context) -> () } } = { ToolShop =
 local Manager = {}
 Manager.__index = Manager
 export type ClientFarmSpeciesManager = typeof(setmetatable({} :: {
-	scope: Lifecycle.Lifecycle?, frame: Frame?, map: Instance?, entries: { BasePart }, nearest: BasePart?,
+	scope: Lifecycle.Lifecycle?, mapScope: Lifecycle.Lifecycle?, frame: Frame?, map: Instance?, entries: { BasePart }, nearest: BasePart?,
 	entry: BasePart?, active: string?, eggId: string?, holding: boolean,
 	confirmationId: string?, hatchTarget: string?,
 }, Manager))
@@ -92,10 +92,24 @@ function Manager.Scan(self: ClientFarmSpeciesManager): ()
 	local farm: Instance? = nil
 	local farms = workspace:FindFirstChild("PersonalFarms")
 	if farms then for _, candidate in farms:GetChildren() do if candidate:GetAttribute("OwnerUserId") == Players.LocalPlayer.UserId then farm = candidate; break end end end
-	-- 地块容器可能先于入口后代复制到客户端；入口未齐时继续采样。
-	if farm ~= self.map or #self.entries < 3 then
+	if farm ~= self.map then
+		if self.mapScope then self.mapScope:Destroy(); self.mapScope = nil end
 		self.map = farm; table.clear(self.entries)
-		if farm then for _, part in farm:GetDescendants() do if part:IsA("BasePart") and typeof(part:GetAttribute("FarmUIEntry")) == "string" then table.insert(self.entries, part) end end end
+		if farm then
+			local mapScope = Lifecycle.new()
+			self.mapScope = mapScope
+			local function OnAdded(object: Instance): ()
+				if object:IsA("BasePart") and typeof(object:GetAttribute("FarmUIEntry")) == "string" then table.insert(self.entries, object) end
+			end
+			local function OnRemoving(object: Instance): ()
+				if not object:IsA("BasePart") then return end
+				local index = table.find(self.entries, object)
+				if index then table.remove(self.entries, index) end
+			end
+			mapScope:Connect(farm.DescendantAdded:Connect(OnAdded))
+			mapScope:Connect(farm.DescendantRemoving:Connect(OnRemoving))
+			for _, object in farm:GetDescendants() do OnAdded(object) end
+		end
 	end
 	local nearest: BasePart? = nil
 	local distance = math.huge
@@ -158,6 +172,7 @@ function Manager.Init(self: ClientFarmSpeciesManager, screen: ScreenGui): ()
 	self:Refresh(); UIManager.FitMarkedRoot(frame)
 end
 function Manager.Destroy(self: ClientFarmSpeciesManager): ()
+	if self.mapScope then self.mapScope:Destroy(); self.mapScope = nil end
 	self:StopHatchHold(); UIManager.CloseWindow("FarmConfirmation"); self:CloseMain(); HatchController.Destroy()
 	if self.frame then Text.Remove(self.frame); UIAdapter.RemoveAdaptiveFrame(self.frame) end
 	if self.scope then self.scope:Destroy(); self.scope = nil end

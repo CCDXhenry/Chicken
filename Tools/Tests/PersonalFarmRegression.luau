@@ -17,23 +17,26 @@ assert(#playerList >= 2, "Two loaded players are required")
 local manager = Manager.new()
 manager.running = true
 local scopes: { Lifecycle.Lifecycle } = {}
+local fixtureMaps: { Folder } = {}
 local originalPivots: { [Model]: CFrame } = {}
 local originalAnchored: { [BasePart]: boolean } = {}
 local checks: { string } = {}
-local function CreateFixture(player: Player, x: number): Manager.Session
+local function CreateFixture(player: Player, x: number, yaw: number): Manager.Session
 	assert(GameInfo.GetPlayerInfo(player), "Wait for real profile loading to finish")
 	local map = ServerStorage.Models.PersonalFarmTemplate:Clone()
 	map.Name = "PersonalFarmRegression_" .. tostring(player.UserId)
 	local scope = Lifecycle.new()
 	table.insert(scopes, scope)
 	local plot = Instance.new("Part")
-	plot.Name, plot.CFrame = map.Name, CFrame.new(x, 0, 10000)
+	plot.Name, plot.CFrame = map.Name, CFrame.new(x, 0, 10000) * CFrame.Angles(0, math.rad(yaw), 0)
 	scope:Own(plot)
 	for _, object in map:GetDescendants() do
 		if object:IsA("BasePart") then object.CFrame = plot.CFrame * object.CFrame end
 	end
+	map:SetAttribute("FarmId", plot.Name)
+	map:SetAttribute("OwnerUserId", player.UserId)
 	map.Parent = workspace
-	scope:Own(map)
+	table.insert(fixtureMaps, map)
 	local session: Manager.Session = { owner = player, plot = plot, map = map, scope = scope, farm = Save.CreateDefault(), eggs = {}, animals = {}, ground = {}, nextEggAt = 0, cooldowns = {}, frozen = false, rng = Random.new(17) }
 	manager.sessions[player], manager.reservations[plot] = session, player
 	local character = player.Character
@@ -76,8 +79,8 @@ local function ForceHatch(session: Manager.Session, species: string, quality: st
 	return egg.id
 end
 local success, failure = xpcall(function(): boolean
-	local first = CreateFixture(playerList[1], 10000)
-	local second = CreateFixture(playerList[2], 10128)
+	local first = CreateFixture(playerList[1], 10000, 90)
+	local second = CreateFixture(playerList[2], 10128, -90)
 	manager:Update(0, 0)
 	assert(#first.eggs == 1 and #second.eggs == 1 and first.eggs[1].id ~= second.eggs[1].id)
 	assert(first.eggs[1].model:GetAttribute("OwnerUserId") == first.owner.UserId)
@@ -86,6 +89,19 @@ local success, failure = xpcall(function(): boolean
 	for i = 1, 35 do manager:Update(i * Config.Species[1].interval, 0) end
 	assert(CountPopulation(first) == 28 and CountPopulation(second) == 28)
 	table.insert(checks, "Independent 28 entity caps")
+	for _, session in { first, second } do
+		local _, candidate = next(session.animals)
+		assert(candidate)
+		candidate.pos = session.plot.CFrame:PointToWorldSpace(Vector3.new(-100, 0, 100))
+	end
+	manager:Update(100, 0)
+	for _, session in { first, second } do
+		for _, candidate in session.animals do
+			local point = session.plot.CFrame:PointToObjectSpace(candidate.pos)
+			assert(point.X >= -23.001 and point.X <= 23.001 and point.Z >= -23.001 and point.Z <= 18.001)
+		end
+	end
+	table.insert(checks, "Animals remain inside each rotated local pasture")
 	local _, foreignAnimal = next(second.animals)
 	assert(foreignAnimal)
 	local root1, root2 = Root(first.owner), Root(second.owner)
@@ -96,6 +112,8 @@ local success, failure = xpcall(function(): boolean
 	local animal = nil
 	for _, candidate in first.animals do if candidate.qualityId == "normal" then animal = candidate; break end end
 	assert(animal)
+	animal.pos = first.plot.CFrame:PointToWorldSpace(Vector3.new(-20, 0, -20))
+	animal.model:PivotTo(CFrame.new(animal.pos + Vector3.yAxis * 0.78))
 	root1.CFrame = CFrame.lookAt(animal.pos + Vector3.new(0, 2, 4), animal.pos + Vector3.yAxis * 2)
 	manager:OnAction(first.owner, "zap")
 	local id, ground = next(first.ground)
@@ -120,6 +138,25 @@ local success, failure = xpcall(function(): boolean
 	manager:Update(204, Config.Species[1].packSeconds)
 	assert(first.farm.cash == 10)
 	table.insert(checks, "First unload waits 0.15 seconds; first sale 10; repeated settlement rejected")
+	local secondAnimal = nil
+	for _, candidate in second.animals do if candidate.qualityId == "normal" then secondAnimal = candidate; break end end
+	assert(secondAnimal)
+	secondAnimal.pos = second.plot.CFrame:PointToWorldSpace(Vector3.new(-20, 0, -20))
+	secondAnimal.model:PivotTo(CFrame.new(secondAnimal.pos + Vector3.yAxis * 0.78))
+	root2.CFrame = CFrame.lookAt(secondAnimal.pos + Vector3.new(0, 2, 4), secondAnimal.pos + Vector3.yAxis * 2)
+	second.cooldowns.zap, second.cooldowns.collect = 0, 0
+	manager:OnAction(second.owner, "zap")
+	manager:OnAction(second.owner, "collect")
+	assert(#second.farm.basket == 1)
+	local secondSell = second.map:FindFirstChild("Sell")
+	assert(secondSell and secondSell:IsA("BasePart"))
+	root2.CFrame = secondSell.CFrame + Vector3.yAxis * 2
+	manager:Update(205, 0)
+	manager:Update(205 + Config.UnloadIntervalSeconds + 0.001, 0)
+	manager:Update(207, Config.Species[1].packSeconds)
+	assert(second.farm.cash == 10 and first.farm.cash == 10 and #second.farm.kitchen == 0)
+	table.insert(checks, "Opposite rotated farms both finish kill, pickup, delivery and independent sale")
+
 	-- 后续阶段继续使用同一隔离夹具；不改真实 profile.farm，不直接调用存档服务。
 	first.farm.cash = 300
 	Business.TryCollect(first.farm, Business.CreateCargo("keep-basket", "chicken", "normal"))
@@ -165,7 +202,7 @@ local success, failure = xpcall(function(): boolean
 	manager:OnCommand(first.owner, { action = "accelerateEgg", targetId = goldenEgg.id })
 	assert(acceleratedFinish == oldFinish - 1 and goldenEgg.finish == acceleratedFinish)
 	manager:OnCommand(second.owner, { action = "requestInstantHatch", targetId = goldenEgg.id })
-	assert(not second.confirmation and second.farm.cash == 0)
+	assert(not second.confirmation and second.farm.cash == 10)
 	manager:OnCommand(first.owner, { action = "confirm", confirmationId = prompt.id })
 	local goldenAnimal = first.animals[goldenEgg.id]
 	assert(goldenAnimal and goldenAnimal.health == 12 and goldenAnimal.qualityId == "golden" and first.farm.cash == 0)
@@ -200,13 +237,19 @@ local success, failure = xpcall(function(): boolean
 	manager:OnAction(first.owner, "zap")
 	assert(CountPopulation(first) == count and first.farm.cash == cash)
 	manager:RemovePlayer(first.owner)
-	assert(not manager.reservations[first.plot] and first.map.Parent == nil)
-	table.insert(checks, "Freeze blocks operations; release destroys owned map and frees plot")
+	assert(not manager.reservations[first.plot] and first.map.Parent == workspace and first.map:GetAttribute("OwnerUserId") == nil and not first.map:FindFirstChild("Eggs"))
+	table.insert(checks, "Freeze blocks operations; release clears runtime entities, preserves static map and frees plot")
 	return true
 end, debug.traceback)
 manager.running = false
 for _, scope in scopes do scope:Destroy() end
+for _, map in fixtureMaps do map:Destroy() end
 for character, pivot in originalPivots do if character.Parent then character:PivotTo(pivot) end end
 for root, anchored in originalAnchored do if root.Parent then root.Anchored = anchored end end
+local active = Manager.GetActive()
+if active then
+	for player, session in active.sessions do player:SetAttribute("FarmPlotId", session.plot.Name) end
+	active:Update(os.clock(), 0)
+end
 assert(success, failure)
 return checks

@@ -23,6 +23,8 @@ local Builder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManage
 
 local Types = require(script.Parent:WaitForChild("ServerPersonalFarmTypes"))
 local View = require(script.Parent:WaitForChild("ServerPersonalFarmView"))
+local Village = require(script.Parent:WaitForChild("ServerFarmVillageTool"))
+local VillageConfig = require(Shared:WaitForChild("FarmVillageConfig"))
 type Egg = Types.Egg
 type Animal = Types.Animal
 type Confirmation = Types.Confirmation
@@ -217,7 +219,11 @@ local function UpdateAnimals(session: Session, now: number, dt: number): ()
 		end
 		local offset = animal.center - animal.pos
 		if offset.Magnitude > RoamRadius then animal.direction = offset.Unit end
-		animal.pos += animal.direction * (if now < animal.fleeUntil then Config.AnimalFleeSpeed else Config.AnimalWalkSpeed) * dt
+		local proposed = animal.pos + animal.direction * (if now < animal.fleeUntil then Config.AnimalFleeSpeed else Config.AnimalWalkSpeed) * dt
+		local point = session.plot.CFrame:PointToObjectSpace(proposed)
+		local bounded = Vector3.new(math.clamp(point.X, VillageConfig.PastureMinimumX, VillageConfig.PastureMaximumX), 0, math.clamp(point.Z, VillageConfig.PastureMinimumZ, VillageConfig.PastureMaximumZ))
+		if point.X ~= bounded.X or point.Z ~= bounded.Z then animal.direction = -animal.direction end
+		animal.pos = session.plot.CFrame:PointToWorldSpace(bounded)
 		local pos = animal.pos + Vector3.yAxis * FarmConfig.AnimalHeights[species.tier] * quality.visualScale
 		animal.model:PivotTo(CFrame.lookAt(pos, pos + animal.direction))
 	end
@@ -443,37 +449,21 @@ function Manager.OnPlayerLoaded(self: ServerPersonalFarmManager, player: Player)
 	if not profile then return end
 	player:SetAttribute("FarmStage", 2)
 	local plots = workspace:WaitForChild("FarmPlots")
-	local ordered = plots:GetChildren()
-	table.sort(ordered, function(a, b) return a.Name < b.Name end)
-	local plot: BasePart?
-	for _, candidate in ordered do
-		if candidate:IsA("BasePart") and not self.reservations[candidate] then plot = candidate; break end
-	end
-	if not plot then
+	local farms = self.runtime
+	assert(farms, "Farm village must be initialized before player loading")
+	local plot, map = Village.FindAvailable(plots, farms, self.reservations)
+	if not plot or not map then
 		self.waiting[player] = true
 		player:SetAttribute("FarmReady", false)
 		NetMsg.FireNotifyFarmFeedback(player, Texts.Farm.PlotWaiting.source)
 		return
 	end
-	self.reservations[plot] = player
+	assert(Village.Claim(map, plot, player, self.reservations), "Farm plot claim failed")
 	self.waiting[player] = nil
-	local template = ServerStorage:WaitForChild("Models"):WaitForChild("PersonalFarmTemplate")
-	assert(template:IsA("Folder"), "PersonalFarmTemplate must be a Folder")
-	local map = template:Clone()
-	map.Name = "Farm_" .. tostring(player.UserId)
-	map:SetAttribute("OwnerUserId", player.UserId)
-	for _, instance in map:GetDescendants() do
-		if instance:IsA("BasePart") then
-			instance.CFrame = plot.CFrame * instance.CFrame
-			instance:SetAttribute("OwnerUserId", player.UserId)
-		end
-	end
-	map.Parent = self.runtime
 	local species = Config.GetSpecies(profile.farm.selectedSpeciesId)
 	assert(species)
 	local session: Session = { owner = player, plot = plot, map = map, scope = Lifecycle.new(), farm = profile.farm, eggs = {}, animals = {}, ground = {}, nextEggAt = os.clock() + species.interval, cooldowns = {}, frozen = false, rng = Random.new(), lastUpdateAt = os.clock() }
 	self.sessions[player] = session
-	session.scope:Own(map)
 	local function OnCharacterAdded(character: Model): () PositionCharacter(session, character) end
 	session.scope:Connect(player.CharacterAdded:Connect(OnCharacterAdded))
 	if player.Character then PositionCharacter(session, player.Character) end
@@ -490,13 +480,15 @@ function Manager.RemovePlayer(self: ServerPersonalFarmManager, player: Player): 
 	local session = self.sessions[player]
 	if session then
 		session.scope:Destroy()
-		self.reservations[session.plot] = nil
+		Village.Release(session.map, session.plot, player, self.reservations)
+		player:SetAttribute("FarmPlotId", nil)
+		player:SetAttribute("FarmReady", false)
 		self.sessions[player] = nil
 		local character = player.Character
 		local basket = if character then character:FindFirstChild("ChickenBasket") else nil
 		if basket then basket:Destroy() end
 	end
-	for waitingPlayer in self.waiting do self:OnPlayerLoaded(waitingPlayer) end
+	if self.running then for waitingPlayer in self.waiting do self:OnPlayerLoaded(waitingPlayer) end end
 end
 function Manager.OnAction(self: ServerPersonalFarmManager, player: Player, action: string, aim: Vector3?, expectedStep: number?): ()
 	local session = self.sessions[player]
@@ -597,7 +589,11 @@ function Manager.Init(self: ServerPersonalFarmManager): ()
 	activeManager = self
 	local legacy = workspace:FindFirstChild("RoastChickenFarm")
 	if legacy and legacy:IsA("Folder") then self.legacy = legacy; legacy.Parent = ServerStorage end
-	self.runtime = GetFolder(workspace, "PersonalFarms")
+	local farms = workspace:WaitForChild("PersonalFarms")
+	assert(farms:IsA("Folder"), "PersonalFarms must be a prebuilt Folder")
+	Village.Validate(workspace:WaitForChild("FarmPlots"), farms)
+	self.runtime = farms
+	for _, map in farms:GetChildren() do if map:IsA("Folder") then Village.Reset(map) end end
 	local function OnAction(player: Player, action: string): ()
 		if action == "zap" or action == "collect" then self:OnAction(player, action) end
 	end
@@ -618,7 +614,7 @@ function Manager.Destroy(self: ServerPersonalFarmManager): ()
 	table.clear(self.waiting)
 	for player in self.sessions do self:RemovePlayer(player) end
 	if self.scope then self.scope:Destroy(); self.scope = nil end
-	if self.runtime then self.runtime:Destroy(); self.runtime = nil end
+	self.runtime = nil
 	if self.legacy then self.legacy.Parent = workspace; self.legacy = nil end
 end
 return Manager
