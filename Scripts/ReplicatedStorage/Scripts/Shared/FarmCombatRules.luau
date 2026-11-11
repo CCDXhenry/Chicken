@@ -7,18 +7,26 @@ local Rules = {}
 local function Distance(a: Candidate, x: number, y: number, z: number): number
 	return math.sqrt((a.x - x)^2 + (a.y - y)^2 + (a.z - z)^2)
 end
-function Rules.ResolveShot(tier: number, level: number, x: number, y: number, z: number, directionX: number, directionZ: number, candidates: { Candidate }): { Hit }
+function Rules.ResolveShot(tier: number, level: number, x: number, y: number, z: number, directionX: number?, directionZ: number?, candidates: { Candidate }): { Hit }
 	local weapon = Config.Weapons[tier]
 	local budget = Config.GetDamage(tier, level)
-	local length = math.sqrt(directionX^2 + directionZ^2)
-	assert(length > 0 and length < math.huge, "Invalid aim direction")
-	directionX, directionZ = directionX / length, directionZ / length
+	local isOmni = weapon.angleDegrees == 360 or directionX == nil or directionZ == nil
+	local normX, normZ = 0, 1
+	if not isOmni and directionX ~= nil and directionZ ~= nil then
+		local length = math.sqrt(directionX^2 + directionZ^2)
+		if length > 0 and length < math.huge then
+			normX, normZ = directionX / length, directionZ / length
+		else
+			isOmni = true
+		end
+	end
 	local initial: { Candidate } = {}
 	for _, target in candidates do
 		local dx, dz = target.x - x, target.z - z
 		local horizontal = math.sqrt(dx^2 + dz^2)
-		local dot = if horizontal > 0 then (dx * directionX + dz * directionZ) / horizontal else 1
-		if target.health > 0 and Distance(target, x, y, z) <= weapon.range and dot >= math.cos(math.rad(weapon.angleDegrees / 2)) then table.insert(initial, target) end
+		local dot = if horizontal > 0 then (dx * normX + dz * normZ) / horizontal else 1
+		local inAngle = isOmni or dot >= math.cos(math.rad(weapon.angleDegrees / 2))
+		if target.health > 0 and Distance(target, x, y, z) <= weapon.range and inAngle then table.insert(initial, target) end
 	end
 	table.sort(initial, function(a, b)
 		local da, db = Distance(a, x, y, z), Distance(b, x, y, z)
