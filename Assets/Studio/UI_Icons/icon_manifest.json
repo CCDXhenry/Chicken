@@ -1,0 +1,52 @@
+{
+  "kind": "chicken_farm_ui_icon_manifest",
+  "groupId": "33977495",
+  "updatedAt": "2026-11-11T08:13:38.717795+00:00",
+  "icons": {
+    "ui_icon_coin": {
+      "assetId": "127017022836974",
+      "rbxassetid": "rbxassetid://127017022836974",
+      "file": "ui_icon_coin.png"
+    },
+    "ui_icon_basket": {
+      "assetId": "70658055348739",
+      "rbxassetid": "rbxassetid://70658055348739",
+      "file": "ui_icon_basket.png"
+    },
+    "ui_icon_egg": {
+      "assetId": "136763459729356",
+      "rbxassetid": "rbxassetid://136763459729356",
+      "file": "ui_icon_egg.png"
+    },
+    "ui_icon_equipment": {
+      "assetId": "131128360815313",
+      "rbxassetid": "rbxassetid://131128360815313",
+      "file": "ui_icon_equipment.png"
+    },
+    "ui_icon_index": {
+      "assetId": "96903664405321",
+      "rbxassetid": "rbxassetid://96903664405321",
+      "file": "ui_icon_index.png"
+    },
+    "ui_icon_shop": {
+      "assetId": "125831873235464",
+      "rbxassetid": "rbxassetid://125831873235464",
+      "file": "ui_icon_shop.png"
+    },
+    "ui_icon_species": {
+      "assetId": "84901496508809",
+      "rbxassetid": "rbxassetid://84901496508809",
+      "file": "ui_icon_species.png"
+    },
+    "ui_icon_tools": {
+      "assetId": "126237998684065",
+      "rbxassetid": "rbxassetid://126237998684065",
+      "file": "ui_icon_tools.png"
+    },
+    "ui_icon_weapon": {
+      "assetId": "100159441348676",
+      "rbxassetid": "rbxassetid://100159441348676",
+      "file": "ui_icon_weapon.png"
+    }
+  }
+}

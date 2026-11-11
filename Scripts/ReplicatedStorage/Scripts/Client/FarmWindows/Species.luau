@@ -13,16 +13,16 @@ function Species.Bind(ctx: Common.Context): ()
 		Common.Wallet(ctx)
 		for i, species in Config.Species do
 			local card = list:WaitForChild("Item" .. i .. "Frame")
-			local previous = i == 1 or unlocked[Config.Species[i - 1].id] == true
+			local previous = i == 1 or unlocked[Config.Species[i - 1].key] == true
 			local selected = info.nestLevel == i
 			Common.Label(card, "NameText", species.name)
 			Common.Label(card, "DetailText", species.health .. " HP  /  " .. species.saleValue .. " coins")
-			Common.State(Common.Button(card, "ActionButton"), if ctx.pending then "Working…" elseif selected then "Selected" elseif unlocked[species.id] then "Select" elseif previous then Common.Price(species.unlockPrice) else "Unlock previous first", not ctx.pending and not selected and previous and (unlocked[species.id] == true or info.cash >= species.unlockPrice))
+			Common.State(Common.Button(card, "ActionButton"), if ctx.pending then "Working…" elseif selected then "Selected" elseif unlocked[species.key] then "Select" elseif previous then Common.Price(species.unlockPrice) else "Unlock previous first", not ctx.pending and not selected and previous and (unlocked[species.key] == true or info.cash >= species.unlockPrice))
 		end
 	end
 	for i, species in Config.Species do
 		local button = Common.Button(list:WaitForChild("Item" .. i .. "Frame"), "ActionButton")
-		local function OnSelect(): () if button.Active then Common.Submit(ctx, { action = "selectSpecies", speciesId = species.id }, Render) end end
+		local function OnSelect(): () if button.Active then Common.Submit(ctx, { action = "selectSpecies", speciesId = species.key }, Render) end end
 		ctx.window.scope:Connect(button.Activated:Connect(OnSelect))
 	end
 	Common.Observe(ctx, Render)

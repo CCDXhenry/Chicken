@@ -7,4 +7,9 @@ Config.Windows = { "ToolShop", "WeaponShop", "WeaponEnhance", "CollectorShop", "
 Config.ToolWindows = { WeaponShop = true, WeaponEnhance = true, CollectorShop = true, BasketShop = true }
 Config.EntryWindows = { ToolShop = "ToolShop", Species = "Species", Restaurant = "Restaurant" }
 Config.EntryLabels = { ToolShop = "Open tool shop", Species = "Manage species", Restaurant = "Manage restaurant", Hatch = "Inspect egg" }
+Config.EntryPrompts = {
+	ToolShop = { action = "Open", object = "Tool shop" },
+	Species = { action = "Manage", object = "Species" },
+	Restaurant = { action = "Manage", object = "Restaurant" },
+}
 return Config

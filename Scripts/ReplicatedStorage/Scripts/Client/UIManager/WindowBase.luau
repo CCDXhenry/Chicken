@@ -12,7 +12,9 @@ type UIActions = UIActions.UIActions
 
 local WindowOpenScaleTweenInfo: TweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 
-local LifecycleTool = require(script.Parent.Parent.Parent:WaitForChild("Shared"):WaitForChild("LifecycleTool"))
+local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
+local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
+local FarmSoundTool = require(sharedScripts:WaitForChild("FarmSoundTool"))
 local WindowBase = {}
 WindowBase.__index = WindowBase
 
@@ -73,12 +75,14 @@ local function PlayScaleOpenAnimation(window: Frame, scope: LifecycleTool.Lifecy
 end
 
 function WindowBase.OnInit(self: WindowBase): ()
+	FarmSoundTool.Play("UIOpen")
 	if self.openAnimation == WindowBase.OpenAnimation.Scale then
 		PlayScaleOpenAnimation(self.frame, self.scope)
 	end
 end
 
 function WindowBase.OnClose(self: WindowBase): ()
+	FarmSoundTool.Play("UIClose")
 	local onClosed = self.onClosed
 	self.onClosed = nil
 	if onClosed then onClosed() end

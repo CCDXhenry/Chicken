@@ -13,6 +13,7 @@ local Request = require(Shared.FarmRequest)
 local Rules = require(Shared.FarmUIConfig)
 local NumberFormat = require(Shared.FarmNumberFormat)
 local UIAdapter = require(Storage.Core.Scripts.Client.UIAdapter)
+local FarmSoundTool = require(Shared.FarmSoundTool)
 local Common = {}
 export type Context = {
 	window: WindowBase.WindowBase, panel: Frame, pending: boolean,
@@ -43,18 +44,37 @@ function Common.New(frame: Frame, id: string, actions: UIActions.UIActions, open
 	local panel = frame:WaitForChild("PanelFrame") :: Frame
 	local ctx: Context = { window = window, panel = panel, open = open, allowed = allowed, pending = false }
 	UIAdapter.AddAdaptiveFrame(frame, UIAdapter.AdaptiveType.Center)
-	local function OnClose(): () window:Close() end
+	local function OnClose(): ()
+		FarmSoundTool.Play("UIClick")
+		window:Close()
+	end
 	window.scope:Connect(Common.Button(panel, "CloseButton").Activated:Connect(OnClose))
 	local back = panel:FindFirstChild("BackButton")
 	if back and back:IsA("ImageButton") then
-		local function OnBack(): () if allowed() then open("ToolShop") end end
+		local function OnBack(): ()
+			if allowed() then
+				FarmSoundTool.Play("UIClick")
+				open("ToolShop")
+			end
+		end
 		window.scope:Connect(back.Activated:Connect(OnBack))
 	end
 	window.onClosed = function(): () Text.Remove(frame) end
 	return ctx
 end
 function Common.Observe(ctx: Context, render: () -> ()): ()
-	local function OnChanged(): () if ctx.window.scope.alive then ctx.pending = false; render() end end
+	local lastCash = Info.GetFarmInfo().cash
+	local function OnChanged(): ()
+		if ctx.window.scope.alive then
+			local currentCash = Info.GetFarmInfo().cash
+			if ctx.pending and currentCash < lastCash then
+				FarmSoundTool.Play("Upgrade")
+			end
+			lastCash = currentCash
+			ctx.pending = false
+			render()
+		end
+	end
 	ctx.window.scope:Connect(Msg.ConnectFarmInfoChanged(OnChanged))
 	ctx.window.scope:Connect(Net.ConnectNotifyFarmFeedback(OnChanged))
 	render()
@@ -65,6 +85,7 @@ function Common.Wallet(ctx: Context): ()
 end
 function Common.Submit(ctx: Context, command: Request.Request, render: () -> ()): ()
 	if ctx.pending or not ctx.allowed() or not Info.GetFarmInfo().ready or UIManager.IsWindowShowing("FarmConfirmation") then return end
+	FarmSoundTool.Play("UIClick")
 	ctx.pending = true
 	render()
 	local payload: { [string]: unknown } = { action = command.action, expectedStep = command.expectedStep, speciesId = command.speciesId, tier = command.tier, targetId = command.targetId, confirmationId = command.confirmationId, aim = command.aim }

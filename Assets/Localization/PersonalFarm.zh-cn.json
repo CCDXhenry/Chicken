@@ -6,6 +6,8 @@
 	"FarmPersonalNeedCoins": "还需要 {1}金币",
 	"FarmZapTouch": "电击",
 	"FarmCollectTouch": "拾取",
+	"FarmZapActionName": "左键 · 电击",
+	"FarmCollectActionName": "右键 · 拾取",
 	"FarmAccelerateDesktop": "F · 按住加速",
 	"FarmAccelerateTouch": "按住加速孵化",
     "FarmPersonalCoins": "金币 {1}",

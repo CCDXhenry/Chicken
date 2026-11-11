@@ -22,6 +22,10 @@ export type RoastChickenHUDFrame = typeof(setmetatable(
 		basketText: TextLabel,
 		stockText: TextLabel,
 		hintText: TextLabel,
+		shopButton: ImageButton,
+		indexButton: ImageButton,
+		eggButton: ImageButton,
+		equipmentButton: ImageButton,
 		actionsFrame: Frame,
 		zapButton: ImageButton,
 		zapNameText: TextLabel,
@@ -57,11 +61,19 @@ function RoastChickenHUDFrame.Init(self: RoastChickenHUDFrame, screenGui: Screen
 	local container = UIManager.CreateFrame("RoastChickenHUDFrame", screenGui, 0)
 	self.container = container
 	self.scope:Own(container)
-	local statusFrame = container:WaitForChild("StatusFrame")
-	local statsFrame = statusFrame:WaitForChild("StatsFrame")
-	self.coinText = statsFrame:WaitForChild("CoinText") :: TextLabel
-	self.basketText = statsFrame:WaitForChild("BasketText") :: TextLabel
-	self.stockText = statusFrame:WaitForChild("StockText") :: TextLabel
+	local topStatusPill = container:WaitForChild("TopStatusPill")
+	self.stockText = topStatusPill:WaitForChild("StockText") :: TextLabel
+	local statsCardFrame = container:WaitForChild("StatsCardFrame")
+	local basketRow = statsCardFrame:WaitForChild("BasketRow")
+	self.basketText = basketRow:WaitForChild("BasketText") :: TextLabel
+	local coinRow = statsCardFrame:WaitForChild("CoinRow")
+	self.coinText = coinRow:WaitForChild("CoinText") :: TextLabel
+	local leftActionsFrame = container:WaitForChild("LeftActionsFrame")
+	self.shopButton = leftActionsFrame:WaitForChild("ShopButton") :: ImageButton
+	self.indexButton = leftActionsFrame:WaitForChild("IndexButton") :: ImageButton
+	local rightActionsFrame = container:WaitForChild("RightActionsFrame")
+	self.eggButton = rightActionsFrame:WaitForChild("EggButton") :: ImageButton
+	self.equipmentButton = rightActionsFrame:WaitForChild("EquipmentButton") :: ImageButton
 	self.hintText = container:WaitForChild("FarmHintText") :: TextLabel
 	self.actionsFrame = container:WaitForChild("ActionsFrame") :: Frame
 	self.zapButton = self.actionsFrame:WaitForChild("ZapButton") :: ImageButton
@@ -96,8 +108,8 @@ function RoastChickenHUDFrame.BindEvents(self: RoastChickenHUDFrame): ()
 end
 function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 	local info = ClientGameInfo.GetFarmInfo()
-	FarmTextTool.Set(self.coinText, GameTexts.Farm.PersonalCoins.source:format(NumberFormat.Number(info.cash)))
-	FarmTextTool.Set(self.basketText, GameTexts.Farm.PersonalBasket.source:format(NumberFormat.Weight(info.basketWeight or 0), NumberFormat.Weight(info.basketCapacity or 12)))
+	FarmTextTool.Set(self.coinText, string.format("$%s", NumberFormat.Number(info.cash)))
+	FarmTextTool.Set(self.basketText, string.format("%s / %s", NumberFormat.Weight(info.basketWeight or 0), NumberFormat.Weight(info.basketCapacity or 12)))
 	FarmTextTool.Set(self.stockText, GameTexts.Farm.PersonalKitchen.source:format(info.waiting or 0, info.processing or 0, NumberFormat.Number(info.expectedValue or 0)))
 	local touch = UserInputService.PreferredInput == Enum.PreferredInput.Touch
 	FarmTextTool.Set(self.zapNameText, if touch then GameTexts.Farm.ZapTouch.source else GameTexts.Farm.ZapActionName.source)
@@ -108,6 +120,9 @@ function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 	if not self.showingMessage then
 		FarmTextTool.Set(self.hintText, if not info.ready then GameTexts.Farm.PlotWaiting.source elseif (info.basketWeight or 0) >= (info.basketCapacity or 12) then GameTexts.Farm.BasketFullHint.source else GameTexts.Farm.LoopHint.source)
 	end
+	UIManager.FitTextLabel(self.coinText)
+	UIManager.FitTextLabel(self.basketText)
+	UIManager.FitTextLabel(self.stockText)
 end
 
 function RoastChickenHUDFrame.ShowMessage(self: RoastChickenHUDFrame, message: string): ()
