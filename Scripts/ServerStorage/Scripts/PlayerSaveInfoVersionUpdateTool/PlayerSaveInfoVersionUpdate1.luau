@@ -1,6 +1,12 @@
--- 玩家存档版本迁移：保留现有版本转换契约
+-- 玩家存档第一版迁移：为旧资料补充独立经营档并保留通用资料和已有经营字段
 --!strict
-local function PlayerSaveInfoVersionUpdate1(playerSaveInfo: any): ()
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local FarmSaveData = require(replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared"):WaitForChild("FarmSaveData"))
+
+local function PlayerSaveInfoVersionUpdate1(playerSaveInfo: { dataVersion: number, farm: FarmSaveData.FarmSave? }): ()
+	if playerSaveInfo.farm == nil then
+		playerSaveInfo.farm = FarmSaveData.CreateDefault()
+	end
 	playerSaveInfo.dataVersion = 1
 end
 

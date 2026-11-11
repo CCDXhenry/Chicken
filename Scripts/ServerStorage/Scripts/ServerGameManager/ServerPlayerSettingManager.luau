@@ -21,7 +21,7 @@ local function OnPlayerRequestSetBGMVolume(player: Player, volume: number): ()
 		return
 	end
 	playerInfo.settingInfo.bgmVolume = volume
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 end
 
 local function OnPlayerRequestSetSoundEffectVolume(player: Player, volume: number): ()
@@ -30,7 +30,7 @@ local function OnPlayerRequestSetSoundEffectVolume(player: Player, volume: numbe
 		return
 	end
 	playerInfo.settingInfo.soundEffectVolume = volume
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 end
 
 local function OnPlayerRequestSetVibrationsOnOffState(player: Player, vibrationsOn: boolean): ()
@@ -39,7 +39,7 @@ local function OnPlayerRequestSetVibrationsOnOffState(player: Player, vibrations
 		return
 	end
 	playerInfo.settingInfo.vibrationOn = vibrationsOn
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 end
 
 function ServerPlayerSettingManager.new(): ServerPlayerSettingManager

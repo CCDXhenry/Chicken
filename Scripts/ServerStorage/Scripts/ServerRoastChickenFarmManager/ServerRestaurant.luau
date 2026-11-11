@@ -180,7 +180,8 @@ function ServerRestaurant.Init(
 				and info.queue[1]
 				and (info.queue[1].pos - queueHead).Magnitude <= FarmConfig.CustomerArrivalThreshold
 			then
-				info.lanes[i] = table.remove(info.queue, 1)
+				local nextCustomer = table.remove(info.queue, 1)
+				if nextCustomer then info.lanes[i] = nextCustomer end
 			end
 		end
 	end

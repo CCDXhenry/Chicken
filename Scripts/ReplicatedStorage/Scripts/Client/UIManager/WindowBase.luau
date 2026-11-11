@@ -27,6 +27,7 @@ export type WindowBase = typeof(setmetatable(
 		uiActions: UIActions,
 		openAnimation: string?,
 		scope: LifecycleTool.Lifecycle,
+		onClosed: (() -> ())?,
 	},
 	WindowBase
 ))
@@ -78,6 +79,9 @@ function WindowBase.OnInit(self: WindowBase): ()
 end
 
 function WindowBase.OnClose(self: WindowBase): ()
+	local onClosed = self.onClosed
+	self.onClosed = nil
+	if onClosed then onClosed() end
 	self.scope:Destroy()
 	UIAdapter.RemoveAdaptiveFrame(self.frame)
 	self.frame:Destroy()

@@ -3,6 +3,7 @@
 local replicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local NetMsg = {}
 local FarmConfig = require(script.Parent:WaitForChild("FarmConfig"))
+local FarmRequest = require(script.Parent:WaitForChild("FarmRequest"))
 
 local scripts = replicatedStorage:WaitForChild("Scripts")
 local sharedScripts = scripts:WaitForChild("Shared")
@@ -181,6 +182,17 @@ end
 -- 客户端请求农场动作：仅接受六种现有动作，统一经正式 RemoteEvents 节点传输。
 function NetMsg.FireRequestFarmAction(action: FarmConfig.FarmAction): ()
 	roastChickenActionEvent:FireServer(action)
+end
+-- 新协议复用既有通道；旧字符串监听器不会处理表请求，新监听器只接收净化后的字段。
+function NetMsg.FireRequestFarmCommand(command: { [string]: unknown }): ()
+	roastChickenActionEvent:FireServer(command)
+end
+function NetMsg.ConnectRequestFarmCommand(callback: (Player, FarmRequest.Request) -> ()): RBXScriptConnection
+	local function OnCommand(player: Player, value: unknown): ()
+		local command = FarmRequest.Parse(value)
+		if command then callback(player, command) end
+	end
+	return roastChickenActionEvent.OnServerEvent:Connect(OnCommand)
 end
 function NetMsg.ConnectRequestFarmAction(callback: (Player, FarmConfig.FarmAction) -> ()): RBXScriptConnection
 	local function OnRequest(player: Player, action: unknown): ()

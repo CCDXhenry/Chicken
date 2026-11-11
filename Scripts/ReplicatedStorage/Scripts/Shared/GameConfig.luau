@@ -2,6 +2,7 @@
 --!strict
 local replicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = {}
+local FarmSaveData = require(script.Parent:WaitForChild("FarmSaveData"))
 
 local core = replicatedStorage:WaitForChild("Core")
 local coreScripts = core:WaitForChild("Scripts")
@@ -13,7 +14,7 @@ GameConfig.GameVersion = "1.0.0"
 --本次AB测试版本
 GameConfig.ABTestVersion = "1.0.0"
 --玩家存档数据版本
-GameConfig.PlayerSaveInfoDataVersion = 0
+GameConfig.PlayerSaveInfoDataVersion = 1
 --正式版游戏id
 GameConfig.GameId = 6376748064
 if game.GameId == GameConfig.GameId then
@@ -62,10 +63,12 @@ export type PlayerSaveInfo = {
 	settingInfo: SettingInfo,
 	--已拥有的通行证列表
 	ownedGamePassList: { number },
+	farm: FarmSaveData.FarmSave,
 }
 export type PlayerInfo = PlayerSaveInfo & {
 	--玩家信息是否发生变化
 	playerInfoChanged: boolean,
+	changeRevision: number,
 	--本次上线时间
 	timeOfThisLogin: number,
 	--玩家的国家/地区
@@ -104,6 +107,7 @@ function GameConfig.CreateDefaultPlayerSaveInfo(): PlayerSaveInfo
 			vibrationOn = true, -- 振动开关；默认开启
 		},
 		ownedGamePassList = {},
+		farm = FarmSaveData.CreateDefault(),
 	}
 end
 

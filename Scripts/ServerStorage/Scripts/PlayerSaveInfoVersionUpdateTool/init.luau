@@ -6,15 +6,20 @@ local PlayerSaveInfoVersionUpdateTool = {}
 local scripts = replicatedStorage:WaitForChild("Scripts")
 local sharedScripts = scripts:WaitForChild("Shared")
 local GameConfig = require(sharedScripts:FindFirstChild("GameConfig"))
---local PlayerSaveInfoVersionUpdate1 = require(script:FindFirstChild("PlayerSaveInfoVersionUpdate1"))
+local FarmSaveData = require(sharedScripts:WaitForChild("FarmSaveData"))
+local PlayerSaveInfoVersionUpdate1 = require(script:WaitForChild("PlayerSaveInfoVersionUpdate1"))
 
 local PlayerSaveInfoVersionUpdateFunctionList: { [number]: (playerSaveInfo: any) -> () } = {
-	--[1] = PlayerSaveInfoVersionUpdate1,
+	[1] = PlayerSaveInfoVersionUpdate1,
 }
 
-function PlayerSaveInfoVersionUpdateTool.Update(playerSaveInfo: any): ()
-	if playerSaveInfo.dataVersion >= GameConfig.PlayerSaveInfoDataVersion then
-		return
+function PlayerSaveInfoVersionUpdateTool.Update(playerSaveInfo: any): (boolean, string?)
+	if type(playerSaveInfo) ~= "table" or type(playerSaveInfo.dataVersion) ~= "number" then
+		return false, "Invalid player save version"
+	end
+	local version = playerSaveInfo.dataVersion
+	if version ~= version or version < 0 or version % 1 ~= 0 or version > GameConfig.PlayerSaveInfoDataVersion then
+		return false, "Unsupported player save version"
 	end
 	for dataVersion: number = playerSaveInfo.dataVersion + 1, GameConfig.PlayerSaveInfoDataVersion do
 		local success: boolean, errMsg: string? = pcall(function()
@@ -22,8 +27,10 @@ function PlayerSaveInfoVersionUpdateTool.Update(playerSaveInfo: any): ()
 		end)
 		if not success then
 			warn("[PlayerSaveInfoVersionUpdateTool] Update", dataVersion, "failed:", errMsg)
+			return false, tostring(errMsg)
 		end
 	end
+	return FarmSaveData.Validate(playerSaveInfo.farm)
 end
 
 return PlayerSaveInfoVersionUpdateTool

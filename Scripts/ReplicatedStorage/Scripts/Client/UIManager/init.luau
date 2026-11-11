@@ -25,7 +25,7 @@ local ButtonHoveredScale: number = 1.1 --按钮鼠标移入放大
 local ButtonPressedScale: number = 0.8 --按钮按下缩小
 local ButtonInteractionTweenInfo: TweenInfo = TweenInfo.new(0.1) --按钮交互动画缓动信息
 
-type WindowConfig = {
+export type WindowConfig = {
 	frameName: string,
 	isModal: boolean,
 	modalTransparency: number?,
@@ -40,6 +40,11 @@ local gameScreenGui: ScreenGui?
 local modalButton: ImageButton
 local interactionEffectAppliedButtons: { [GuiButton]: boolean } = {}
 local uiActions: UIActions
+
+function UIManager.RegisterWindow(windowId: string, config: WindowConfig): ()
+	assert(not addedWindows[windowId], "Cannot replace an open window configuration")
+	WindowConfigs[windowId] = config
+end
 
 local function MarkButtonApplied(appliedButtons: { [GuiButton]: boolean }, button: GuiButton): ()
 	appliedButtons[button] = true

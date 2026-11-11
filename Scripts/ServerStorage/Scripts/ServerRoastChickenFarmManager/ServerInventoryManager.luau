@@ -55,10 +55,10 @@ function ServerInventoryManager.Update(self: FarmContext, now: number): { BasePa
 		local root = ServerFarmSceneTool.GetPlayerRoot(player)
 		if root then
 			table.insert(roots, root)
-			player:SetAttribute("FarmShop", ServerFarmSceneTool.IsInZone(root, self.map.Shop :: BasePart))
-			local nestUpgradeZone = self.map.Nest:FindFirstChild("UpgradeZone") :: BasePart?
+			player:SetAttribute("FarmShop", ServerFarmSceneTool.IsInZone(root, self.map:WaitForChild("Shop") :: BasePart))
+			local nestUpgradeZone = self.map:WaitForChild("Nest"):FindFirstChild("UpgradeZone") :: BasePart?
 			player:SetAttribute("FarmNestShop", if nestUpgradeZone then ServerFarmSceneTool.IsInZone(root, nestUpgradeZone) else false)
-			local restUpgradeZone = self.map.Restaurant:FindFirstChild("UpgradeZone") :: BasePart?
+			local restUpgradeZone = self.map:WaitForChild("Restaurant"):FindFirstChild("UpgradeZone") :: BasePart?
 			player:SetAttribute("FarmRestaurantShop", if restUpgradeZone then ServerFarmSceneTool.IsInZone(root, restUpgradeZone) else false)
 
 			local sellZone = self.map:FindFirstChild("Sell") :: BasePart?

@@ -17,6 +17,7 @@ local DateTimeExtension = require(coreSharedScripts:FindFirstChild("DateTimeExte
 local scripts = replicatedStorage:WaitForChild("Scripts")
 local sharedScripts = scripts:WaitForChild("Shared")
 local GameConfig = require(sharedScripts:FindFirstChild("GameConfig"))
+local FarmSaveData = require(sharedScripts:WaitForChild("FarmSaveData"))
 local NetMsg = require(sharedScripts:FindFirstChild("NetMsg"))
 
 local playerInfoMap: { [number]: GameConfig.PlayerInfo } = {}
@@ -37,7 +38,9 @@ function ServerGameInfo.InitPlayerInfo(
 		lastOnlineDateUTC = playerSaveInfo.lastOnlineDateUTC,
 		settingInfo = playerSaveInfo.settingInfo,
 		ownedGamePassList = playerSaveInfo.ownedGamePassList,
+		farm = FarmSaveData.Copy(playerSaveInfo.farm),
 		playerInfoChanged = false,
+		changeRevision = 0,
 		timeOfThisLogin = DateTime.now().UnixTimestamp,
 		countryRegion = countryRegion,
 		lastOnlineDate = DateTimeExtension.GetDate(DateTime.fromUnixTimestamp(playerSaveInfo.lastOnlineDateUTC)),
@@ -90,9 +93,19 @@ function ServerGameInfo.CreatePlayerSaveInfoByPlayerInfo(playerInfo: GameConfig.
 		loginDays = playerInfo.loginDays,
 		lastOnlineDateUTC = playerInfo.lastOnlineDateUTC,
 		lastOnlineDate = playerInfo.lastOnlineDate,
-		ownedGamePassList = playerInfo.ownedGamePassList,
-		settingInfo = playerInfo.settingInfo,
+		farm = FarmSaveData.Copy(playerInfo.farm),
+		ownedGamePassList = table.clone(playerInfo.ownedGamePassList),
+		settingInfo = table.clone(playerInfo.settingInfo),
 	}
+end
+
+-- 统一记录资料版本，防止异步保存成功回调清掉保存期间产生的新修改。
+function ServerGameInfo.MarkPlayerInfoChanged(player: Player): ()
+	local info = playerInfoMap[player.UserId]
+	if info then
+		info.playerInfoChanged = true
+		info.changeRevision += 1
+	end
 end
 
 --增加玩家游戏时间
@@ -102,7 +115,7 @@ function ServerGameInfo.AddPlayerGameTime(player: Player, addGameTime: number): 
 		return
 	end
 	playerInfo.gameTime += addGameTime
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 end
 
 --改变玩家登录天数
@@ -114,7 +127,7 @@ function ServerGameInfo.ChangePlayerLoginDays(player: Player, loginDays: number,
 	playerInfo.loginDays = loginDays
 	playerInfo.lastOnlineDate = lastOnlineDate
 	playerInfo.lastOnlineDateUTC = DateTime.fromUniversalTime(lastOnlineDate.Year, lastOnlineDate.Month, lastOnlineDate.Day).UnixTimestamp
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 end
 
 --设置玩家通行证为已获得
@@ -125,7 +138,7 @@ function ServerGameInfo.SetPlayerGamePassAcquired(player: Player, gamePassId: nu
 	end
 	table.insert(playerInfo.ownedGamePassList, gamePassId)
 	playerInfo.ownedGamePassMap[gamePassId] = true
-	playerInfo.playerInfoChanged = true
+	ServerGameInfo.MarkPlayerInfoChanged(player)
 	NetMsg.FireNotifyPlayerAcquiredGamePass(player, gamePassId)
 end
 

@@ -6,7 +6,7 @@ local FarmConfig = require(script.Parent.Parent:WaitForChild("Shared"):WaitForCh
 local LifecycleTool = require(script.Parent.Parent:WaitForChild("Shared"):WaitForChild("LifecycleTool"))
 local farmScope: LifecycleTool.Lifecycle?
 local farmInfo: FarmConfig.ClientFarmInfo =
-	{ cash = 0, basketCount = 0, zap = 1, collect = 1, stock = 0, atShop = false, atNest = false, atRestaurant = false, nestLevel = 1, restaurantLevel = 1 }
+	{ stage = 2, ready = false, cash = 0, basketCount = 0, zap = 1, collect = 1, stock = 0, atShop = false, atNest = false, atRestaurant = false, nestLevel = 1, restaurantLevel = 1 }
 
 local scripts = replicatedStorage:WaitForChild("Scripts")
 local sharedScripts = scripts:WaitForChild("Shared")
@@ -94,7 +94,35 @@ function ClientGameInfo.InitFarmInfo(): ()
 		return if typeof(value) == "number" then value else default
 	end
 	local function OnFarmAttributeChanged(): ()
+		local unlocked: { [string]: boolean } = {}
+		for _, id in { "chicken", "rabbit", "sheep", "cow", "dragon" } do unlocked[id] = player:GetAttribute("FarmSpecies_" .. id) == true end
+		local confirmationId = player:GetAttribute("FarmConfirmId")
+		local confirmationMessage = player:GetAttribute("FarmConfirmMessage")
+		local confirmationRisk = player:GetAttribute("FarmConfirmRisk")
+		local eggId, eggSpecies, eggQuality = player:GetAttribute("FarmEggId"), player:GetAttribute("FarmEggSpecies"), player:GetAttribute("FarmEggQuality")
+		local weaponLevels: { [string]: number } = {}
+		for tier = 1, 5 do weaponLevels[tostring(tier)] = ReadNumber("FarmWeaponLevel_" .. tier, if tier == 1 then 1 else 0) end
 		farmInfo = {
+			eggId = if typeof(eggId) == "string" then eggId else nil,
+			eggSpecies = if typeof(eggSpecies) == "string" then eggSpecies else nil,
+			eggQuality = if typeof(eggQuality) == "string" then eggQuality else nil,
+			eggEndTime = ReadNumber("FarmEggEndTime", 0),
+			eggPrice = ReadNumber("FarmEggPrice", 0),
+			weaponLevels = weaponLevels,
+			weaponLevel = ReadNumber("FarmWeaponLevel", 1),
+			basketTier = ReadNumber("FarmBasketTier", 1),
+			unlockedSpecies = unlocked,
+			confirmationId = if typeof(confirmationId) == "string" then confirmationId else nil,
+			confirmationMessage = if typeof(confirmationMessage) == "string" then confirmationMessage else nil,
+			confirmationRisk = if typeof(confirmationRisk) == "string" then confirmationRisk else nil,
+			stage = ReadNumber("FarmStage", 2),
+			ready = player:GetAttribute("FarmReady") == true,
+			basketWeight = ReadNumber("FarmBasketWeight", 0),
+			basketCapacity = ReadNumber("FarmBasketCapacity", 12),
+			damage = ReadNumber("FarmDamage", 2),
+			waiting = ReadNumber("FarmWaiting", 0),
+			processing = ReadNumber("FarmProcessing", 0),
+			expectedValue = ReadNumber("FarmExpectedValue", 0),
 			cash = ReadNumber("FarmCash", 0),
 			basketCount = ReadNumber("FarmBasket", 0),
 			zap = ReadNumber("FarmZap", 1),

@@ -19,7 +19,7 @@ function ServerEggManager.MakeEgg(self: FarmContext, now: number, variant: numbe
 		0,
 		self.rng:NextNumber(FarmConfig.EggLandingZMinimum, FarmConfig.EggLandingZMaximum)
 	)
-	local chutePart = self.map.Nest:WaitForChild("Chute") :: BasePart
+	local chutePart = self.map:WaitForChild("Nest"):WaitForChild("Chute") :: BasePart
 	local origin = chutePart.Position
 	local size = 1.22 + variant * 0.13
 

@@ -166,6 +166,9 @@ end
 
 -- 只拟合带 DesignTextSize 标记的屏幕单行标签；世界标牌和多行段落保持原样
 function TextFitting.FitMarkedText(label: TextLabel): number?
+	if label.TextWrapped then
+		return nil
+	end
 	if typeof(label:GetAttribute("DesignTextSize")) ~= "number" then
 		return nil
 	end

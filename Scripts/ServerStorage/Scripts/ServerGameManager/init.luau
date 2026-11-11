@@ -9,14 +9,15 @@ local runService: RunService = game:GetService("RunService")
 local configService: ConfigService = game:GetService("ConfigService")
 local serverCore = serverStorage:WaitForChild("Core")
 local serverCoreScripts = serverCore:WaitForChild("Scripts")
-local DataStoreTool = require(serverCoreScripts:FindFirstChild("DataStoreTool"))
 local MarketplaceTool = require(serverCoreScripts:FindFirstChild("MarketplaceTool"))
 local serverScripts = serverStorage:WaitForChild("Scripts")
 local PlayerSaveInfoVersionUpdateTool = require(serverScripts:FindFirstChild("PlayerSaveInfoVersionUpdateTool"))
 local ServerGameInfo = require(serverScripts:FindFirstChild("ServerGameInfo"))
+local ServerPlayerSaveStore = require(serverScripts:WaitForChild("ServerPlayerSaveStore"))
 local AnalyticsTool = require(serverScripts:FindFirstChild("AnalyticsTool"))
-local ServerRoastChickenFarmManager = require(serverScripts:WaitForChild("ServerRoastChickenFarmManager"))
-type ServerRoastChickenFarmManager = ServerRoastChickenFarmManager.ServerRoastChickenFarmManager
+local ServerRoastChickenFarmManager = require(serverScripts:WaitForChild("ServerPersonalFarmManager"))
+type ServerRoastChickenFarmManager = ServerRoastChickenFarmManager.ServerPersonalFarmManager
+local activeFarmManager: ServerRoastChickenFarmManager?
 local core = replicatedStorage:WaitForChild("Core")
 local coreScripts = core:WaitForChild("Scripts")
 local coreSharedScripts = coreScripts:WaitForChild("Shared")
@@ -33,6 +34,10 @@ local ServerPlayerChatCommandManager = require(script:FindFirstChild("ServerPlay
 type ServerPlayerChatCommandManager = ServerPlayerChatCommandManager.ServerPlayerChatCommandManager
 
 local playerInfoDataStore: DataStore = dataStoreService:GetDataStore("PlayerInfo")
+local playerSaveStore = ServerPlayerSaveStore.new(playerInfoDataStore)
+local closing = false
+local closeBound = false
+local removingPlayers: { [Player]: boolean } = {}
 
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local activeScope: LifecycleTool.Lifecycle?
@@ -120,17 +125,26 @@ end
 local function SavePlayerInfo(player: Player): ()
 	local playerInfo: GameConfig.PlayerInfo? = ServerGameInfo.GetPlayerInfo(player)
 	if playerInfo ~= nil and playerInfo.playerInfoChanged then
+		local revision = playerInfo.changeRevision
 		local playerSaveInfo: GameConfig.PlayerSaveInfo = ServerGameInfo.CreatePlayerSaveInfoByPlayerInfo(playerInfo)
-		local success: boolean, _: any = DataStoreTool.SafeSet(playerInfoDataStore, tostring(player.UserId), playerSaveInfo)
-		if success then
+		local success, reason = playerSaveStore:Save(player.UserId, playerSaveInfo, revision)
+		if success and playerInfo.changeRevision == revision and playerInfo.farm.revision == playerSaveInfo.farm.revision then
 			playerInfo.playerInfoChanged = false
 		end
+		if not success then warn("[ServerGameManager] Player save failed", player.UserId, reason) end
 	end
 end
 
 local function OnHeartbeat(deltaTime: number): ()
+	if closing then return end
 	local nowDate: DateTimeExtension.DateTimeTable = DateTimeExtension.GetNowDate()
 	for playerIndex: number, player: Player in players:GetPlayers() do
+		if removingPlayers[player] then continue end
+		if ServerGameInfo.GetPlayerInfo(player) and not playerSaveStore:IsActive(player.UserId) then
+			if activeFarmManager then activeFarmManager:FreezePlayer(player) end
+			player:Kick("Your data session expired. Please rejoin to keep your progress safe.")
+			continue
+		end
 		ServerGameInfo.AddPlayerGameTime(player, deltaTime)
 		CheckPlayerLoginDays(player, nowDate)
 	end
@@ -138,16 +152,20 @@ end
 
 --玩家加入事件
 local function OnPlayerAdded(player: Player): ()
+	if closing then player:Kick("Server is closing. Please rejoin."); return end
 	if playerScopes[player] then
 		return
 	end
 	local scope = LifecycleTool.new()
 	playerScopes[player] = scope
+	player:SetAttribute("FarmStage", 2)
+	player:SetAttribute("FarmReady", false)
 	--读取玩家存档
-	local success: boolean, result: any = DataStoreTool.SafeGet(playerInfoDataStore, tostring(player.UserId))
+	local success: boolean, result: any, loadReason = playerSaveStore:Acquire(player.UserId)
 	--如果没有读取成功，将玩家踢出服务器，提示玩家读取存档失败
 	if not success then
-		player:Kick(result)
+		warn("[ServerGameManager] Player session acquisition failed", player.UserId, loadReason)
+		player:Kick("Your saved data is unavailable or active in another server. Please rejoin later.")
 		return
 	end
 	if not scope.alive or not player.Parent then
@@ -156,7 +174,12 @@ local function OnPlayerAdded(player: Player): ()
 	--初始化玩家信息
 	local playerSaveInfo: GameConfig.PlayerSaveInfo
 	if result ~= nil then
-		PlayerSaveInfoVersionUpdateTool.Update(result)
+		local migrated, migrationError = PlayerSaveInfoVersionUpdateTool.Update(result)
+		if not migrated then
+			warn("[ServerGameManager] Save migration rejected", player.UserId, migrationError)
+			player:Kick("Your saved data could not be loaded. Please rejoin later.")
+			return
+		end
 		playerSaveInfo = result
 	else
 		playerSaveInfo = GameConfig.CreateDefaultPlayerSaveInfo()
@@ -186,7 +209,9 @@ local function OnPlayerAdded(player: Player): ()
 		return
 	end
 	local playerConfigInfo: GameConfig.PlayerConfigInfo = {}
+	if not playerSaveStore:IsActive(player.UserId) then player:Kick("Your data session expired while loading. Please rejoin."); return end
 	ServerGameInfo.InitPlayerInfo(player, playerSaveInfo, countryRegion, playerConfigInfo)
+	if activeFarmManager then activeFarmManager:OnPlayerLoaded(player) end
 	--检查登录天数
 	local nowDate: DateTimeExtension.DateTimeTable = DateTimeExtension.GetNowDate()
 	CheckPlayerLoginDays(player, nowDate)
@@ -197,7 +222,11 @@ local function OnPlayerAdded(player: Player): ()
 		while scope.alive do
 			task.wait(AutoSavePlayerInfoInterval)
 			--保存玩家数据
-			SavePlayerInfo(player)
+			local saveScope = activeScope
+			if scope.alive and saveScope and not playerSaveStore:IsBusy(player.UserId) then
+				-- 保存任务归服务器作用域所有；退出销毁玩家作用域不会取消正在进行的写入。
+				saveScope:Spawn(function(): () SavePlayerInfo(player) end)
+			end
 		end
 	end)
 	--埋点添加玩家
@@ -206,6 +235,9 @@ end
 
 --玩家离开事件
 local function OnPlayerRemoving(player: Player): ()
+	if removingPlayers[player] then return end
+	removingPlayers[player] = true
+	if activeFarmManager then activeFarmManager:FreezePlayer(player) end
 	local scope = playerScopes[player]
 	if scope then
 		scope:Destroy()
@@ -215,13 +247,24 @@ local function OnPlayerRemoving(player: Player): ()
 	AnalyticsTool.RemovePlayer(player)
 	--离开前保存玩家数据
 	SavePlayerInfo(player)
+	if activeFarmManager then activeFarmManager:RemovePlayer(player) end
 	--移除玩家数据
 	ServerGameInfo.RemovePlayerInfo(player)
-	local scope = playerScopes[player]
-	if scope then
-		scope:Destroy()
-		playerScopes[player] = nil
+	local released = playerSaveStore:Release(player.UserId)
+	if not released then warn("[ServerGameManager] Session release failed; lease will expire", player.UserId) end
+	removingPlayers[player] = nil
+end
+
+local function OnServerClosing(): ()
+	closing = true
+	for _, player in players:GetPlayers() do
+		if activeFarmManager then activeFarmManager:FreezePlayer(player) end
 	end
+	for _, player in players:GetPlayers() do
+		local saveScope = activeScope
+		if saveScope then saveScope:Spawn(function(): () OnPlayerRemoving(player) end) else OnPlayerRemoving(player) end
+	end
+	while next(playerScopes) or next(removingPlayers) do task.wait(0.05) end
 end
 
 function ServerGameManager.new(): ServerGameManager
@@ -239,8 +282,10 @@ function ServerGameManager.Init(self: ServerGameManager): ()
 		return
 	end
 	self.initialized = true
+	closing = false
 	local scope = LifecycleTool.new()
 	activeScope = scope
+	if not closeBound then game:BindToClose(OnServerClosing); closeBound = true end
 	print("GameVersion", GameConfig.GameVersion)
 	AnalyticsTool.Init()
 	scope:Connect(players.PlayerAdded:Connect(OnPlayerAdded))
@@ -251,6 +296,7 @@ function ServerGameManager.Init(self: ServerGameManager): ()
 	self.playerSettingManager:Init()
 	self.playerChatCommandManager:Init()
 	self.roastChickenFarmManager:Init()
+	activeFarmManager = self.roastChickenFarmManager
 	for _, player in players:GetPlayers() do
 		scope:Spawn(function()
 			OnPlayerAdded(player)
@@ -263,17 +309,18 @@ function ServerGameManager.Destroy(self: ServerGameManager): ()
 		return
 	end
 	self.initialized = false
-	if activeScope then
-		activeScope:Destroy()
-		activeScope = nil
-	end
-	self.roastChickenFarmManager:Destroy()
+	closing = true
+	for player in playerScopes do if activeFarmManager then activeFarmManager:FreezePlayer(player) end end
 	self.marketplaceManager:Destroy()
 	self.playerSettingManager:Destroy()
 	self.playerChatCommandManager:Destroy()
 	for player in playerScopes do
 		OnPlayerRemoving(player)
 	end
+	while next(removingPlayers) do task.wait() end
+	if activeScope then activeScope:Destroy(); activeScope = nil end
+	self.roastChickenFarmManager:Destroy()
+	activeFarmManager = nil
 	AnalyticsTool.Destroy()
 end
 return ServerGameManager

@@ -1,9 +1,12 @@
 -- 客户端标牌：按零件属性在本地 PlayerGui 克隆世界标牌，并在零件移除时销毁
 --!strict
 local Players = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local LifecycleTool = require(script.Parent.Parent:WaitForChild("Shared"):WaitForChild("LifecycleTool"))
 local FarmTextTool = require(script.Parent:WaitForChild("FarmTextTool"))
+local EggBinder = require(script.Parent:WaitForChild("EggBillboardBinder"))
+local Config = require(script.Parent.Parent.Shared.FarmEconomyConfig)
 
 local uiTemplates = replicatedStorage:WaitForChild("UI")
 
@@ -11,6 +14,8 @@ type SignRecord = {
 	name: string,
 	gui: BillboardGui,
 	label: TextLabel?,
+	binding: EggBinder.Binding?,
+	scope: LifecycleTool.Lifecycle,
 }
 
 local ClientBillboardManager = {}
@@ -37,6 +42,8 @@ function ClientBillboardManager.Release(self: ClientBillboardManager, part: Base
 	if not record then
 		return
 	end
+	if record.binding then record.binding.Destroy() end
+	record.scope:Destroy()
 	FarmTextTool.Remove(record.gui)
 	record.gui:Destroy()
 	self.signs[part] = nil
@@ -47,20 +54,40 @@ function ClientBillboardManager.Apply(self: ClientBillboardManager, part: BasePa
 	if not record then
 		return
 	end
+	if record.binding then return end
+	local templateOffset = record.gui:GetAttribute("BaseStudsOffset")
+	local baseOffset = if typeof(templateOffset) == "Vector3" then templateOffset else Vector3.zero
 	local offsetY = part:GetAttribute("FarmStudsOffsetY")
 	if typeof(offsetY) == "number" then
-		record.gui.StudsOffset = Vector3.new(0, offsetY, 0)
+		baseOffset = Vector3.new(baseOffset.X, offsetY, baseOffset.Z)
 	end
+	local compensation = record.gui:GetAttribute("HeightCompensationStuds")
+	record.gui.StudsOffset = baseOffset + Vector3.new(0, if typeof(compensation) == "number" then compensation else 0, 0)
 	local label = record.label
 	if not label then
 		return
 	end
-	local tone = part:GetAttribute("FarmHealthTone")
-	if tone == "healthy" or tone == "damaged" then
-		local colorName = if tone == "damaged" then "DamagedColor" else "HealthyColor"
-		local color = label:GetAttribute(colorName)
-		if typeof(color) == "Color3" then
-			label.BackgroundColor3 = color
+	local model = part:FindFirstAncestorOfClass("Model")
+	if record.name == "AnimalHealthGui" and model then
+		local health, maximum = model:GetAttribute("Health"), model:GetAttribute("MaxHealth")
+		if typeof(health) == "number" and typeof(maximum) == "number" then
+			local speciesId = model:GetAttribute("SpeciesId")
+			local species = if typeof(speciesId) == "string" then Config.GetSpecies(speciesId) else nil
+			FarmTextTool.Set(label, if species then species.name else model.Name)
+			local qualityId = model:GetAttribute("QualityId")
+			local qualityLabel = record.gui:FindFirstChild("QualityText", true) :: TextLabel
+			FarmTextTool.Set(qualityLabel, if qualityId == "golden" then "Golden" elseif qualityId == "rainbow" then "Rainbow" elseif qualityId == "giant" then "Giant" else "Normal")
+			local qualityColor = record.gui:GetAttribute("Quality_" .. tostring(qualityId))
+			if typeof(qualityColor) == "Color3" then qualityLabel.TextColor3 = qualityColor end
+			local healthText = record.gui:FindFirstChild("HealthText", true) :: TextLabel
+			healthText.Text = tostring(health) .. " / " .. tostring(maximum)
+			local fill = record.gui:FindFirstChild("FillFrame", true) :: Frame
+			fill.Size = UDim2.fromScale(math.clamp(health / math.max(1, maximum), 0, 1), 1)
+			local track = fill.Parent :: Frame
+			track.Visible = health < maximum
+			local color = record.gui:GetAttribute(if health < maximum then "DamagedColor" else "HealthyColor")
+			if typeof(color) == "Color3" then fill.BackgroundColor3 = color end
+			return
 		end
 	end
 	local message = part:GetAttribute("FarmText")
@@ -88,15 +115,29 @@ function ClientBillboardManager.Mount(self: ClientBillboardManager, part: BasePa
 	gui.Adornee = part
 	gui.Parent = playerGui
 	local label = gui:FindFirstChild("ContentText", true)
+	local signScope = LifecycleTool.new()
 	self.signs[part] = {
 		name = signName,
 		gui = gui,
 		label = if label ~= nil and label:IsA("TextLabel") then label else nil,
+		scope = signScope,
+		binding = if signName == "EggSignGui" then EggBinder.Bind(part, gui) else nil,
 	}
+	local model = part:FindFirstAncestorOfClass("Model")
+	if signName == "AnimalHealthGui" and model then
+		local function OnHealth(): () self:Apply(part) end
+		signScope:Connect(model:GetAttributeChangedSignal("Health"):Connect(OnHealth))
+		signScope:Connect(model:GetAttributeChangedSignal("MaxHealth"):Connect(OnHealth))
+	end
 	self:Apply(part)
 end
 
 function ClientBillboardManager.Refresh(self: ClientBillboardManager, part: BasePart): ()
+	local ownerId = part:GetAttribute("OwnerUserId")
+	if typeof(ownerId) == "number" and ownerId ~= Players.LocalPlayer.UserId then
+		self:Release(part)
+		return
+	end
 	local signName = part:GetAttribute("FarmSign")
 	if typeof(signName) ~= "string" or signName == "" then
 		self:Release(part)
@@ -118,6 +159,7 @@ function ClientBillboardManager.TrackPart(self: ClientBillboardManager, part: Ba
 		self:Apply(part)
 	end
 	partScope:Connect(part:GetAttributeChangedSignal("FarmSign"):Connect(OnSignChanged))
+	partScope:Connect(part:GetAttributeChangedSignal("OwnerUserId"):Connect(OnSignChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmText"):Connect(OnDetailChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmHealthTone"):Connect(OnDetailChanged))
 	partScope:Connect(part:GetAttributeChangedSignal("FarmStudsOffsetY"):Connect(OnDetailChanged))
@@ -141,15 +183,20 @@ function ClientBillboardManager.Init(self: ClientBillboardManager): ()
 	self.scope = scope
 	self.playerGui = Players.LocalPlayer:WaitForChild("PlayerGui") :: PlayerGui
 	local function OnAdded(instance: Instance): ()
-		if instance:IsA("BasePart") then
+		if instance:IsA("BasePart") and (typeof(instance:GetAttribute("FarmSign")) == "string" or CollectionService:HasTag(instance, "FarmSignPart")) then
 			self:TrackPart(instance)
 		end
+	end
+	local function OnTagged(instance: Instance): ()
+		if instance:IsDescendantOf(workspace) then OnAdded(instance) end
 	end
 	local function OnRemoving(instance: Instance): ()
 		if instance:IsA("BasePart") then
 			self:ForgetPart(instance)
 		end
 	end
+	scope:Connect(CollectionService:GetInstanceAddedSignal("FarmSignPart"):Connect(OnTagged))
+	scope:Connect(CollectionService:GetInstanceRemovedSignal("FarmSignPart"):Connect(OnRemoving))
 	scope:Connect(workspace.DescendantAdded:Connect(OnAdded))
 	scope:Connect(workspace.DescendantRemoving:Connect(OnRemoving))
 	for _, instance in workspace:GetDescendants() do

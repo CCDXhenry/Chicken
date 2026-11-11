@@ -94,6 +94,7 @@ end
 local function FindFarmEntry(message: string): (string?, string?, { string }?)
 	local farmTexts: { [string]: GameTexts.TextData } = GameTexts.Farm
 	local bestCount = -1
+	local bestSpecificity = -1
 	local bestSource: string? = nil
 	local bestKey: string? = nil
 	local bestArgs: { string }? = nil
@@ -103,7 +104,8 @@ local function FindFarmEntry(message: string): (string?, string?, { string }?)
 			continue
 		end
 		local count = PlaceholderCount(entry.source)
-		if count <= bestCount then
+		local specificity = #(entry.source:gsub("%%[ds]", ""))
+		if count < bestCount or (count == bestCount and specificity <= bestSpecificity) then
 			continue
 		end
 		local captures: { string } = { message:match(pattern) }
@@ -112,6 +114,7 @@ local function FindFarmEntry(message: string): (string?, string?, { string }?)
 			args[index] = captures[index]
 		end
 		bestCount = count
+		bestSpecificity = specificity
 		bestSource = PlaceholderSource(entry.source)
 		bestKey = entry.key
 		bestArgs = args
@@ -129,7 +132,7 @@ local function ApplyLabel(label: TextLabel, message: string, source: string?, ke
 		TranslationTool.CustomAutoLocalizeTextLabel(label, source, key, localizedArgs)
 	else
 		TranslationTool.RemoveCustomAutoLocalizeGui(label)
-		label.Text = message
+		label.Text = TranslationTool.Translate(label, message)
 	end
 end
 
@@ -143,7 +146,7 @@ local function ApplyButton(button: TextButton, message: string, source: string?,
 		TranslationTool.CustomAutoLocalizeTextButton(button, source, key, localizedArgs)
 	else
 		TranslationTool.RemoveCustomAutoLocalizeGui(button)
-		button.Text = message
+		button.Text = TranslationTool.Translate(button, message)
 	end
 end
 

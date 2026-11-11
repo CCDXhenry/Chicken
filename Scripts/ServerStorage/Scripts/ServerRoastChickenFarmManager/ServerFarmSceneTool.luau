@@ -1,9 +1,11 @@
 -- 农场场景表现工具：维护模型、模板克隆和临时特效的生命周期
 --!strict
 local Debris = game:GetService("Debris")
+local CollectionService = game:GetService("CollectionService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
+local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local ServerFarmTypes = require(script.Parent.Parent:WaitForChild("ServerFarmTypes"))
 type FarmContext = ServerFarmTypes.FarmContext
 type PlayerFarmState = ServerFarmTypes.PlayerFarmInfo
@@ -38,11 +40,13 @@ function ServerFarmSceneTool.CreatePiece(parent: Instance, name: string, size: V
 end
 function ServerFarmSceneTool.BindSign(part: BasePart, templateName: string, studsOffsetY: number?): ()
 	part:SetAttribute("FarmSign", templateName)
+	CollectionService:AddTag(part, "FarmSignPart")
 	if studsOffsetY ~= nil then
 		part:SetAttribute("FarmStudsOffsetY", studsOffsetY)
 	end
 end
 function ServerFarmSceneTool.ClearSign(part: BasePart): ()
+	CollectionService:RemoveTag(part, "FarmSignPart")
 	part:SetAttribute("FarmSign", nil)
 	part:SetAttribute("FarmText", nil)
 	part:SetAttribute("FarmHealthTone", nil)
@@ -56,19 +60,21 @@ function ServerFarmSceneTool.SetHealthTone(part: BasePart, damaged: boolean): ()
 end
 function ServerFarmSceneTool.UpdateBasketVisual(self: FarmContext, player: Player, s: PlayerFarmState): ()
 	local character = player.Character
-	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not root then
+	if not character then return end
+	local root = character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
 		return
 	end
 
-	local model = character:FindFirstChild("ChickenBasket") :: Model?
+	local model = character:FindFirstChild("ChickenBasket")
 	if not model and #s.items > 0 then
-		model = Instance.new("Model")
-		model.Name = "ChickenBasket"
-		model.Parent = character
+		local basketModel = Instance.new("Model")
+		basketModel.Name = "ChickenBasket"
+		basketModel.Parent = character
+		model = basketModel
 
 		local function attach(name: string, size: Vector3, offset: Vector3, hex: string, ball: boolean?): Part
-			local p = ServerFarmSceneTool.CreatePiece(model :: Model, name, size, (root :: BasePart).CFrame * CFrame.new(offset), hex, ball)
+			local p = ServerFarmSceneTool.CreatePiece(basketModel, name, size, root.CFrame * CFrame.new(offset), hex, ball)
 			p.Massless = true
 			p.Anchored = false
 			local weld = Instance.new("WeldConstraint")
@@ -141,7 +147,7 @@ function ServerFarmSceneTool.FindNearby<T>(
 	return list
 end
 
-function ServerFarmSceneTool.SpawnLightningArc(self: FarmContext, from: Vector3, to: Vector3): ()
+function ServerFarmSceneTool.SpawnLightningArc(self: { map: Folder, rng: Random, scope: LifecycleTool.Lifecycle }, from: Vector3, to: Vector3): ()
 	local last = from
 	for i = 1, 5 do
 		local nextPoint = from:Lerp(to, i / 5)

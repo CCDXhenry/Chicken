@@ -23,7 +23,7 @@ function ServerCreatureBuilder.Build(variant: number, cooked: boolean, piece: Pi
 	if cooked then
 		model.PrimaryPart = CreatePart("Roast", 0, 0, 0, 1.74, 0.83, 1.91, RoastColors[variant])
 		CreatePart("Glaze", 0, 0.39, -0.12, 1.46, 0.18, 1.51, "FFC05D")
-		local bones = if variant == 1 then { -1, 1 } else { 1 }
+		local bones: { number } = if variant == 1 then { -1, 1 } else { 1 }
 		for _, side in bones do
 			CreatePart("Drumstick", side * 0.71, -0.02, 0.47, 0.63, 0.59, 0.9, RoastColors[variant])
 			CreatePart("Bone", side * 0.8, 0, 1, 0.24, 0.23, 0.55, "FFF2C4")

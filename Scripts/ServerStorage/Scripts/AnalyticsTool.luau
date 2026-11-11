@@ -51,13 +51,12 @@ local function PostCustomEvent(customEventBody: CustomEventBody): ()
 	local requestBody: string = httpService:JSONEncode(customEventBody)
 	table.clear(customEventBody.events)
 	if not runService:IsStudio() then
+		local headers: { [string]: Secret | string } = { ["Content-Type"] = "application/json" }
 		local success: boolean, result: any = pcall(function()
 			return httpService:RequestAsync({
 				Url = PostCustomEventsUrl,
 				Method = "POST",
-				Headers = {
-					["Content-Type"] = "application/json",
-				},
+				Headers = headers,
 				Body = requestBody,
 				Compress = Enum.HttpCompression.None,
 			})

@@ -13,7 +13,7 @@ local ServerFarmSceneTool = require(script.Parent:WaitForChild("ServerFarmSceneT
 local ServerUpgradeManager = {}
 function ServerUpgradeManager.Purchase(self: FarmContext, player: Player, s: PlayerFarmState, root: BasePart, action: FarmConfig.FarmAction): ()
 	if action == "buyNest" then
-		local upgradeZone = self.map.Nest:FindFirstChild("UpgradeZone") :: BasePart?
+		local upgradeZone = self.map:WaitForChild("Nest"):FindFirstChild("UpgradeZone") :: BasePart?
 		if not upgradeZone or not ServerFarmSceneTool.IsInZone(root, upgradeZone) then
 			return
 		end
@@ -31,7 +31,7 @@ function ServerUpgradeManager.Purchase(self: FarmContext, player: Player, s: Pla
 		self.SyncPlayerState(player, s)
 		self.SendFeedback(player, GameTexts.Farm.NestUpgraded.source:format(nextType.egg))
 	elseif action == "buyRestaurant" then
-		local upgradeZone = self.map.Restaurant:FindFirstChild("UpgradeZone") :: BasePart?
+		local upgradeZone = self.map:WaitForChild("Restaurant"):FindFirstChild("UpgradeZone") :: BasePart?
 		if not upgradeZone or not ServerFarmSceneTool.IsInZone(root, upgradeZone) then
 			return
 		end
@@ -43,7 +43,7 @@ function ServerUpgradeManager.Purchase(self: FarmContext, player: Player, s: Pla
 		elseif cost then
 			self.SendFeedback(player, GameTexts.Farm.NeedCoins.source:format(cost - s.cash))
 		end
-	elseif ServerFarmSceneTool.IsInZone(root, self.map.Shop :: BasePart) then
+	elseif ServerFarmSceneTool.IsInZone(root, self.map:WaitForChild("Shop") :: BasePart) then
 		local key = if action == "buyZap" then "zap" else "collect"
 		local currentLevel = if key == "zap" then s.zap else s.collect
 		local price = FarmConfig.ToolPrices[currentLevel]

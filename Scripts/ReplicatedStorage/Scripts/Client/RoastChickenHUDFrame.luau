@@ -1,10 +1,12 @@
 -- 农场界面包装器：克隆正式模板，通过客户端数据层刷新单行文案并管理交互生命周期
 --!strict
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
-local catalog = require(sharedScripts:WaitForChild("RoastChickenCatalog"))
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
 local GameTexts = require(sharedScripts:WaitForChild("GameTexts"))
+local NumberFormat = require(sharedScripts:WaitForChild("FarmNumberFormat"))
+local Economy = require(sharedScripts:WaitForChild("FarmEconomyConfig"))
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local ClientGameInfo = require(script.Parent:WaitForChild("ClientGameInfo"))
 local ClientMsg = require(script.Parent:WaitForChild("ClientMsg"))
@@ -27,14 +29,6 @@ export type RoastChickenHUDFrame = typeof(setmetatable(
 		collectButton: ImageButton,
 		collectNameText: TextLabel,
 		collectDetailText: TextLabel,
-		shopFrame: Frame,
-		buyZapButton: ImageButton,
-		buyZapText: TextLabel,
-		buyCollectButton: ImageButton,
-		buyCollectText: TextLabel,
-		buildingButton: ImageButton,
-		buildingTitleText: TextLabel,
-		buildingDetailText: TextLabel,
 		saleNoticeText: TextLabel,
 		showingMessage: boolean,
 		initialized: boolean,
@@ -67,7 +61,7 @@ function RoastChickenHUDFrame.Init(self: RoastChickenHUDFrame, screenGui: Screen
 	local statsFrame = statusFrame:WaitForChild("StatsFrame")
 	self.coinText = statsFrame:WaitForChild("CoinText") :: TextLabel
 	self.basketText = statsFrame:WaitForChild("BasketText") :: TextLabel
-	self.stockText = statsFrame:WaitForChild("StockText") :: TextLabel
+	self.stockText = statusFrame:WaitForChild("StockText") :: TextLabel
 	self.hintText = container:WaitForChild("FarmHintText") :: TextLabel
 	self.actionsFrame = container:WaitForChild("ActionsFrame") :: Frame
 	self.zapButton = self.actionsFrame:WaitForChild("ZapButton") :: ImageButton
@@ -76,20 +70,14 @@ function RoastChickenHUDFrame.Init(self: RoastChickenHUDFrame, screenGui: Screen
 	self.collectButton = self.actionsFrame:WaitForChild("CollectButton") :: ImageButton
 	self.collectNameText = self.collectButton:WaitForChild("ActionNameText") :: TextLabel
 	self.collectDetailText = self.collectButton:WaitForChild("ActionDetailText") :: TextLabel
-	self.shopFrame = container:WaitForChild("UpgradeShopFrame") :: Frame
-	self.buyZapButton = self.shopFrame:WaitForChild("BuyZapButton") :: ImageButton
-	self.buyZapText = self.buyZapButton:WaitForChild("ContentText") :: TextLabel
-	self.buyCollectButton = self.shopFrame:WaitForChild("BuyCollectButton") :: ImageButton
-	self.buyCollectText = self.buyCollectButton:WaitForChild("ContentText") :: TextLabel
-	self.buildingButton = container:WaitForChild("BuildingUpgradeButton") :: ImageButton
-	self.buildingTitleText = self.buildingButton:WaitForChild("BuildingTitleText") :: TextLabel
-	self.buildingDetailText = self.buildingButton:WaitForChild("BuildingDetailText") :: TextLabel
 	self.saleNoticeText = container:WaitForChild("SaleNoticeText") :: TextLabel
 	UIAdapter.AddAdaptiveFrame(container, UIAdapter.AdaptiveType.Center)
 	self:BindEvents()
 	self.scope:Connect(ClientMsg.ConnectFarmInfoChanged(function()
 		self:Render()
 	end))
+	local function OnInputChanged(): () self:Render() end
+	self.scope:Connect(UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(OnInputChanged))
 	self:Render()
 	UIManager.FitMarkedRoot(container)
 end
@@ -100,103 +88,25 @@ function RoastChickenHUDFrame.BindEvents(self: RoastChickenHUDFrame): ()
 	local function OnCollect(): ()
 		self.onActionTriggered("collect")
 	end
-	local function OnBuyZap(): ()
-		if self.buyZapButton.Active then
-			self.onActionTriggered("buyZap")
-		end
-	end
-	local function OnBuyCollect(): ()
-		if self.buyCollectButton.Active then
-			self.onActionTriggered("buyCollect")
-		end
-	end
-	local function OnBuyBuilding(): ()
-		if not self.buildingButton.Active then
-			return
-		end
-		local info = ClientGameInfo.GetFarmInfo()
-		if info.atNest then
-			self.onActionTriggered("buyNest")
-		elseif info.atRestaurant then
-			self.onActionTriggered("buyRestaurant")
-		end
-	end
 	local function BindActivated(button: ImageButton, onActivated: () -> ()): ()
 		self.scope:Connect(button.Activated:Connect(onActivated))
 	end
 	BindActivated(self.zapButton, OnZap)
 	BindActivated(self.collectButton, OnCollect)
-	BindActivated(self.buyZapButton, OnBuyZap)
-	BindActivated(self.buyCollectButton, OnBuyCollect)
-	BindActivated(self.buildingButton, OnBuyBuilding)
 end
 function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 	local info = ClientGameInfo.GetFarmInfo()
-	local cash = info.cash
-	local count = info.basketCount
-	local z = info.zap
-	local c = info.collect
-	local stock = info.stock
-
-	FarmTextTool.Set(self.coinText, (GameTexts.Farm.Coins.source):format(cash))
-	FarmTextTool.Set(self.basketText, (GameTexts.Farm.Basket.source):format(count))
-	FarmTextTool.Set(self.stockText, (GameTexts.Farm.Stock.source):format(stock))
-
-	local atNest = info.atNest
-	local atRestaurant = info.atRestaurant
-	local nestLevel = info.nestLevel
-	local restaurantLevel = info.restaurantLevel
-
-	local nextType = catalog.creatures[nestLevel + 1]
-	local nextPrice = catalog.restaurantPrices[restaurantLevel]
-
-	self.buildingButton.Visible = atNest or atRestaurant
-	if atNest then
-		self.buildingButton.Active = nextType ~= nil
-		if nextType then
-			FarmTextTool.Set(self.buildingTitleText, (GameTexts.Farm.NestUpgradeTitle.source):format(nextType.egg))
-			FarmTextTool.Set(self.buildingDetailText, (GameTexts.Farm.UpgradePrice.source):format(nextType.unlock))
-			self.buildingDetailText.Visible = true
-		else
-			FarmTextTool.Set(self.buildingTitleText, GameTexts.Farm.NestMax.source)
-			self.buildingDetailText.Visible = false
-		end
-	elseif atRestaurant then
-		self.buildingButton.Active = nextPrice ~= nil
-		if nextPrice then
-			local benefit = if restaurantLevel == 1 then GameTexts.Farm.FasterService.source else GameTexts.Farm.SecondCounter.source
-			FarmTextTool.Set(self.buildingTitleText, (GameTexts.Farm.RestaurantUpgradeTitle.source):format(benefit))
-			FarmTextTool.Set(self.buildingDetailText, (GameTexts.Farm.UpgradePrice.source):format(nextPrice))
-			self.buildingDetailText.Visible = true
-		else
-			FarmTextTool.Set(self.buildingTitleText, GameTexts.Farm.RestaurantMax.source)
-			self.buildingDetailText.Visible = false
-		end
-	end
-
-	FarmTextTool.Set(self.zapNameText, GameTexts.Farm.ZapActionName.source)
-	FarmTextTool.Set(self.zapDetailText, (GameTexts.Farm.ZapActionDetail.source):format(GameTexts.ZapNames[z], catalog.zapDamage[z]))
-	FarmTextTool.Set(self.collectNameText, GameTexts.Farm.CollectActionName.source)
-	FarmTextTool.Set(self.collectDetailText, (GameTexts.Farm.CollectActionDetail.source):format(GameTexts.CollectNames[c], FarmConfig.CollectLimits[c]))
-
-	self.shopFrame.Visible = info.atShop
-	FarmTextTool.Set(
-		self.buyZapText,
-		if z == 3
-			then GameTexts.Farm.ZapMax.source
-			else (GameTexts.Farm.ZapUpgrade.source):format(GameTexts.ZapNames[z + 1], catalog.zapDamage[z + 1], FarmConfig.ToolPrices[z])
-	)
-	FarmTextTool.Set(
-		self.buyCollectText,
-		if c == 3
-			then GameTexts.Farm.CollectMax.source
-			else (GameTexts.Farm.CollectUpgrade.source):format(GameTexts.CollectNames[c + 1], FarmConfig.ToolPrices[c])
-	)
-	self.buyZapButton.Active = z < 3
-	self.buyCollectButton.Active = c < 3
-
+	FarmTextTool.Set(self.coinText, GameTexts.Farm.PersonalCoins.source:format(NumberFormat.Number(info.cash)))
+	FarmTextTool.Set(self.basketText, GameTexts.Farm.PersonalBasket.source:format(NumberFormat.Weight(info.basketWeight or 0), NumberFormat.Weight(info.basketCapacity or 12)))
+	FarmTextTool.Set(self.stockText, GameTexts.Farm.PersonalKitchen.source:format(info.waiting or 0, info.processing or 0, NumberFormat.Number(info.expectedValue or 0)))
+	local touch = UserInputService.PreferredInput == Enum.PreferredInput.Touch
+	FarmTextTool.Set(self.zapNameText, if touch then GameTexts.Farm.ZapTouch.source else GameTexts.Farm.ZapActionName.source)
+	FarmTextTool.Set(self.zapDetailText, GameTexts.Farm.PersonalWeapon.source:format(info.zap, info.weaponLevel or 1, NumberFormat.Number(info.damage or 2)))
+	FarmTextTool.Set(self.collectNameText, if touch then GameTexts.Farm.CollectTouch.source else GameTexts.Farm.CollectActionName.source)
+	FarmTextTool.Set(self.collectDetailText, GameTexts.Farm.CollectActionDetail.source:format(GameTexts.CollectNames[info.collect] or tostring(info.collect), Economy.Collectors[info.collect].maximumItems))
+	self.zapButton.Active, self.collectButton.Active = info.ready == true, info.ready == true
 	if not self.showingMessage then
-		FarmTextTool.Set(self.hintText, if count == FarmConfig.BasketCapacity then GameTexts.Farm.BasketFullHint.source else GameTexts.Farm.LoopHint.source)
+		FarmTextTool.Set(self.hintText, if not info.ready then GameTexts.Farm.PlotWaiting.source elseif (info.basketWeight or 0) >= (info.basketCapacity or 12) then GameTexts.Farm.BasketFullHint.source else GameTexts.Farm.LoopHint.source)
 	end
 end
 

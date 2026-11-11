@@ -1,0 +1,185 @@
+{
+  "dynamic": [
+    {
+      "key": "FarmUIWeaponName",
+      "source": "Tier %d weapon",
+      "translation": "{1}阶武器"
+    },
+    {
+      "key": "FarmUIWeaponLevel",
+      "source": "Tier %d  /  Level %d",
+      "translation": "武器 {1}阶 / 强化 {2}级"
+    },
+    {
+      "key": "FarmUICurrentDamage",
+      "source": "Current damage  %s",
+      "translation": "当前伤害 {1}"
+    },
+    {
+      "key": "FarmUINextDamage",
+      "source": "Next damage  %s",
+      "translation": "强化后伤害 {1}"
+    },
+    {
+      "key": "FarmUICollectorName",
+      "source": "Tier %d collector",
+      "translation": "{1}阶收集器"
+    },
+    {
+      "key": "FarmUICollectorStats",
+      "source": "%s range  /  %d items",
+      "translation": "范围 {1} / {2}份"
+    },
+    {
+      "key": "FarmUIBasketName",
+      "source": "Tier %d basket",
+      "translation": "{1}阶背筐"
+    },
+    {
+      "key": "FarmUICurrentCapacity",
+      "source": "Current capacity  %s kg",
+      "translation": "当前容量 {1} kg"
+    },
+    {
+      "key": "FarmUINextCapacity",
+      "source": "Next capacity  %s kg",
+      "translation": "升级后容量 {1} kg"
+    },
+    {
+      "key": "FarmUIBasketLoad",
+      "source": "In your basket  %s kg",
+      "translation": "已装载 {1} kg"
+    },
+    {
+      "key": "FarmUIRestaurantName",
+      "source": "Restaurant level %d",
+      "translation": "餐厅 {1}级"
+    },
+    {
+      "key": "FarmUIWorkers",
+      "source": "%d workers  /  %s speed",
+      "translation": "{1}名员工 / {2}速度"
+    },
+    {
+      "key": "FarmUIKitchen",
+      "source": "%d waiting / %d cooking / %s coins",
+      "translation": "等待 {1} / 打包 {2} / 预计 {3}金币"
+    },
+    {
+      "key": "FarmUIWeaponDetail",
+      "source": "%s damage  /  %d targets",
+      "translation": "伤害 {1} / {2}个目标"
+    },
+    {
+      "key": "FarmUISpeciesDetail",
+      "source": "%s HP  /  %s coins",
+      "translation": "生命 {1} / 售价 {2}金币"
+    },
+    {
+      "key": "FarmUIEquipDetail",
+      "source": "Lv.%d  /  %s damage",
+      "translation": "强化 {1}级 / 伤害 {2}"
+    },
+    {
+      "key": "FarmUITime",
+      "source": "%s seconds",
+      "translation": "剩余 {1}秒"
+    },
+    {
+      "key": "FarmUIHatchPrice",
+      "source": "Hatch now  /  %s coins",
+      "translation": "立即孵化 / {1}金币"
+    },
+    {
+      "key": "FarmUINeedPrice",
+      "source": "Need %s coins",
+      "translation": "还需 {1}金币"
+    },
+    {
+      "key": "FarmUIPrice",
+      "source": "%s coins",
+      "translation": "{1}金币"
+    },
+    {
+      "key": "FarmUIEggInfo",
+      "source": "%s  /  %s",
+      "translation": "{1} / {2}"
+    }
+  ],
+  "static": {
+    "CHICKEN FARM": "烤鸡农场",
+    "CHICKEN FARM  /  GROW SOMETHING GREAT": "烤鸡农场 / 从小农场开始",
+    "The tool shed": "农场工具店",
+    "A little upgrade. A bigger harvest.": "升级好工具，收获更多美味。",
+    "Weapons": "武器",
+    "Enhancement": "武器强化",
+    "Collectors": "收集器",
+    "Baskets": "背筐",
+    "Power up your harvest": "让每次电击更有力量",
+    "Make your favorite stronger": "强化你最喜欢的武器",
+    "Bring every roast home": "把每份美味带回家",
+    "Room for a bigger day": "为更大的收获做好准备",
+    "Explore  >": "查看 >",
+    "Weapon enhancement": "武器强化",
+    "More power from the tool you love.": "让趁手的武器更加强大。",
+    "Collector shop": "收集器商店",
+    "A wider reach, a quicker harvest.": "收集更远，收获更快。",
+    "Basket shop": "背筐商店",
+    "More room for delicious possibilities.": "装下更多美味与可能。",
+    "Your restaurant": "我的餐厅",
+    "From farm to counter. Keep things cooking.": "从农场到餐桌，美味持续出炉。",
+    "Meet your next flock": "认识你的新伙伴",
+    "Unlock a new chapter on your farm.": "解锁农场经营的新篇章。",
+    "Your equipment": "我的装备",
+    "Pick a trusted tool for today's harvest. Swipe to explore.": "挑选今天的好帮手，滑动查看更多。",
+    "Find your next spark": "武器商店",
+    "Five tiers. One bigger harvest. Swipe to explore.": "五阶武器，更多收获。滑动查看更多。",
+    "Something wonderful is hatching": "新伙伴即将诞生",
+    "Give your newest arrival a little encouragement.": "帮新伙伴快一点来到农场吧。",
+    "Hold to help": "按住加速孵化",
+    "Hatch instantly": "立即孵化",
+    "One more thing…": "请确认操作",
+    "Please review before continuing.": "继续之前，请确认以下内容。",
+    "Confirm": "确认",
+    "Cancel": "取消",
+    "< Tool shop": "< 返回工具店",
+    "My tools": "我的装备",
+    "Inspect egg": "查看孵化",
+    "Open tool shop": "打开工具店",
+    "Manage species": "管理物种",
+    "Manage restaurant": "管理餐厅",
+    "[R]  Open tool shop": "[R] 打开工具店",
+    "[R]  Manage species": "[R] 管理物种",
+    "[R]  Manage restaurant": "[R] 管理餐厅",
+    "Maximum level": "已满级",
+    "All weapons owned": "已拥有全部武器",
+    "Your weapon is fully enhanced": "武器已强化至满级",
+    "Enhancement stays with this weapon": "强化等级独立保留在当前武器上",
+    "Your collector is fully upgraded": "收集器已升至满级",
+    "Collect more with every trip": "每次出门都能带回更多收获",
+    "Your basket is fully upgraded": "背筐已升至满级",
+    "Your restaurant is fully upgraded": "餐厅已升至满级",
+    "Working…": "处理中…",
+    "Owned": "已拥有",
+    "Selected": "已选中",
+    "Select": "选择",
+    "Unlock previous first": "请先解锁前一阶",
+    "Equipped": "已装备",
+    "Equip": "装备",
+    "Not owned": "尚未拥有",
+    "Available at the tool shed": "前往工具店购买",
+    "NEST": "鸡巢",
+    "RESTAURANT": "餐厅",
+    "PACKING": "打包中",
+    "Each boost removes 1 second": "每次加速减少1秒",
+    "Hold to accelerate": "按住加速",
+    "[F] Hold to accelerate": "[F] 按住加速",
+    "Accelerating…": "加速中…",
+    "Details": "详情",
+    "Egg": "蛋",
+    "Normal": "普通",
+    "Golden": "黄金",
+    "Rainbow": "彩虹",
+    "Giant": "巨型"
+  }
+}
