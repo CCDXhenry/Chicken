@@ -6,15 +6,17 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local LifecycleTool = require(script.Parent.Parent:WaitForChild("Shared"):WaitForChild("LifecycleTool"))
 local FarmTextTool = require(script.Parent:WaitForChild("FarmTextTool"))
 local EggBinder = require(script.Parent:WaitForChild("EggBillboardBinder"))
+local CookedFoodBinder = require(script.Parent:WaitForChild("CookedFoodBillboardBinder"))
 local Config = require(script.Parent.Parent.Shared.FarmEconomyConfig)
 
 local uiTemplates = replicatedStorage:WaitForChild("UI")
 
+type AnyBinding = { Destroy: () -> () }
 type SignRecord = {
 	name: string,
 	gui: BillboardGui,
 	label: TextLabel?,
-	binding: EggBinder.Binding?,
+	binding: AnyBinding?,
 	scope: LifecycleTool.Lifecycle,
 }
 
@@ -54,7 +56,9 @@ function ClientBillboardManager.Apply(self: ClientBillboardManager, part: BasePa
 	if not record then
 		return
 	end
-	if record.binding then return end
+	if record.binding then
+		return
+	end
 	local templateOffset = record.gui:GetAttribute("BaseStudsOffset")
 	local baseOffset = if typeof(templateOffset) == "Vector3" then templateOffset else Vector3.zero
 	local offsetY = part:GetAttribute("FarmStudsOffsetY")
@@ -109,7 +113,7 @@ function ClientBillboardManager.Mount(self: ClientBillboardManager, part: BasePa
 	if existing ~= nil then
 		self:Release(part)
 	end
-	local template = uiTemplates:FindFirstChild(signName)
+	local template = uiTemplates:FindFirstChild(signName) or uiTemplates:WaitForChild(signName, 2)
 	assert(template ~= nil and template:IsA("BillboardGui"), "Missing farm sign template: " .. signName)
 	local gui = template:Clone()
 	gui.Adornee = part
@@ -121,7 +125,11 @@ function ClientBillboardManager.Mount(self: ClientBillboardManager, part: BasePa
 		gui = gui,
 		label = if label ~= nil and label:IsA("TextLabel") then label else nil,
 		scope = signScope,
-		binding = if signName == "EggSignGui" then EggBinder.Bind(part, gui) else nil,
+		binding = if signName == "EggSignGui"
+			then EggBinder.Bind(part, gui)
+			elseif signName == "CookedFoodSignGui"
+			then CookedFoodBinder.Bind(part, gui)
+			else nil,
 	}
 	local model = part:FindFirstAncestorOfClass("Model")
 	if signName == "AnimalHealthGui" and model then
@@ -134,7 +142,8 @@ end
 
 function ClientBillboardManager.Refresh(self: ClientBillboardManager, part: BasePart): ()
 	local ownerId = part:GetAttribute("OwnerUserId")
-	if part:GetAttribute("FarmSignAudience") ~= "Public" and typeof(ownerId) == "number" and ownerId ~= Players.LocalPlayer.UserId then
+	local audience = part:GetAttribute("FarmSignAudience")
+	if audience == "Private" and typeof(ownerId) == "number" and ownerId ~= Players.LocalPlayer.UserId then
 		self:Release(part)
 		return
 	end

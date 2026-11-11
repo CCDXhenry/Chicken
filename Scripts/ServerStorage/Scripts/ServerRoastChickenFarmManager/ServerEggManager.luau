@@ -90,7 +90,7 @@ function ServerEggManager.UpdateEggs(self: FarmContext, now: number): ()
 				local shell = egg.model.PrimaryPart
 				if shell then
 					if shell:GetAttribute("FarmSign") ~= "EggSignGui" then
-						ServerFarmSceneTool.BindSign(shell, "EggSignGui")
+						ServerFarmSceneTool.BindSign(shell, "EggSignGui", nil, "Public")
 					end
 					ServerFarmSceneTool.SetSignText(shell, (GameTexts.Farm.EggCountdown.source):format(catalog.creatures[egg.variant].egg, seconds))
 				end

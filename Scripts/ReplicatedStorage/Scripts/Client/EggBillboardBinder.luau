@@ -8,6 +8,7 @@ local Info = require(script.Parent.ClientGameInfo)
 local Text = require(script.Parent.FarmTextTool)
 local UI = require(script.Parent.UIManager)
 local Hatch = require(script.Parent.ClientHatchController)
+local FarmSoundTool = require(Storage.Scripts.Shared.FarmSoundTool)
 local Binder = {}
 export type Binding = { Destroy: () -> () }
 local function NumberAttribute(object: Instance, name: string, fallback: number): number
@@ -38,18 +39,21 @@ function Binder.Bind(part: BasePart, gui: BillboardGui): Binding
 		Text.Set(panel:WaitForChild("NameText") :: TextLabel, if species then species.name else "Egg")
 	end
 	local lastActionText = ""
+	local function UpdateStudsOffset(selected: boolean): ()
+		local size = gui:GetAttribute(if selected then "ExpandedSize" else "CompactSize")
+		assert(typeof(size) == "Vector2", "Missing egg size contract")
+		gui.Size = UDim2.fromScale(size.X, size.Y)
+		local gap = NumberAttribute(gui, "ModelClearanceStuds", 0.3)
+		-- 相机空间上移：用蛋壳包围球和半个标牌高度预留间隔，巨型蛋同样适用。
+		gui.StudsOffset = Vector3.new(0, part.Size.Magnitude * 0.5 + gap + size.Y * 0.5, 0)
+	end
 	local function Render(): ()
 		local info = Info.GetFarmInfo()
 		local selected = info.ready == true and info.eggId == id and not UI.HasShowingWindow()
 		if wasExpanded ~= selected then
 			wasExpanded = selected
 			compact.Visible, expanded.Visible = not selected, selected
-			local size = gui:GetAttribute(if selected then "ExpandedSize" else "CompactSize")
-			assert(typeof(size) == "Vector2", "Missing egg size contract")
-			gui.Size = UDim2.fromScale(size.X, size.Y)
-			local gap = NumberAttribute(gui, "ModelClearanceStuds", 0.3)
-			-- 相机空间上移：用蛋壳包围球和半个标牌高度预留间隔，巨型蛋同样适用。
-			gui.StudsOffset = Vector3.new(0, part.Size.Magnitude * 0.5 + gap + size.Y * 0.5, 0)
+			UpdateStudsOffset(selected)
 		end
 		local finish = NumberAttribute(model, "HatchEndTime", 0)
 		local start = NumberAttribute(model, "HatchStartTime", finish - 1)
@@ -59,6 +63,7 @@ function Binder.Bind(part: BasePart, gui: BillboardGui): Binding
 		if sequence > lastSequence and finish < lastFinish then
 			feedbackUntil = os.clock() + NumberAttribute(gui, "FeedbackSeconds", .65)
 			lastSequence, lastFinish = sequence, finish
+			FarmSoundTool.Play("EggSpeedup", part.Position)
 		end
 		local remaining = math.max(0, finish - now)
 		local ratio = math.clamp(1 - remaining / duration, 0, 1)
@@ -86,6 +91,9 @@ function Binder.Bind(part: BasePart, gui: BillboardGui): Binding
 	local function OnDetails(): () if Info.GetFarmInfo().eggId == id and not UI.HasShowingWindow() then Hatch.OpenDetails() end end
 	scope:Connect(accelerate.InputBegan:Connect(OnBegin))
 	scope:Connect(details.Activated:Connect(OnDetails))
+	scope:Connect(part:GetPropertyChangedSignal("Size"):Connect(function(): ()
+		UpdateStudsOffset(wasExpanded == true)
+	end))
 	Render()
 	scope:Spawn(function(): () while scope.alive do task.wait(.1); if scope.alive then Render() end end end)
 	return { Destroy = function(): () if Hatch.IsHolding(id) then Hatch.Stop() end; scope:Destroy(); Text.Remove(gui) end }

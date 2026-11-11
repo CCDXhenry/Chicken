@@ -19,8 +19,9 @@ function Tool.Reset(map: Folder): ()
 	map:SetAttribute("Occupied", false)
 	for _, object in map:GetDescendants() do
 		object:SetAttribute("OwnerUserId", nil)
-		if object:IsA("BasePart") and object:GetAttribute("FarmSign") and object:GetAttribute("FarmSignAudience") ~= "Public" then
+		if object:IsA("BasePart") and object:GetAttribute("FarmSign") and object.Name ~= "OwnerSign" then
 			object:SetAttribute("FarmSign", nil)
+			object:SetAttribute("FarmSignAudience", nil)
 			object:SetAttribute("FarmText", nil)
 		end
 	end

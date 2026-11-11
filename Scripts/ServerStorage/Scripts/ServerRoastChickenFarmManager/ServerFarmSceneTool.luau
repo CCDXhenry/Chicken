@@ -38,8 +38,9 @@ function ServerFarmSceneTool.CreatePiece(parent: Instance, name: string, size: V
 	part.Parent = parent
 	return part
 end
-function ServerFarmSceneTool.BindSign(part: BasePart, templateName: string, studsOffsetY: number?): ()
+function ServerFarmSceneTool.BindSign(part: BasePart, templateName: string, studsOffsetY: number?, audience: string?): ()
 	part:SetAttribute("FarmSign", templateName)
+	part:SetAttribute("FarmSignAudience", audience or "Public")
 	CollectionService:AddTag(part, "FarmSignPart")
 	if studsOffsetY ~= nil then
 		part:SetAttribute("FarmStudsOffsetY", studsOffsetY)
@@ -48,6 +49,7 @@ end
 function ServerFarmSceneTool.ClearSign(part: BasePart): ()
 	CollectionService:RemoveTag(part, "FarmSignPart")
 	part:SetAttribute("FarmSign", nil)
+	part:SetAttribute("FarmSignAudience", nil)
 	part:SetAttribute("FarmText", nil)
 	part:SetAttribute("FarmHealthTone", nil)
 	part:SetAttribute("FarmStudsOffsetY", nil)
@@ -113,7 +115,7 @@ function ServerFarmSceneTool.CreateAnimalHealthLabel(self: FarmContext, model: M
 	assert(primaryPart, "Animal model needs PrimaryPart")
 	local bounds, size = model:GetBoundingBox()
 	local offsetY = bounds.Position.Y + size.Y / 2 - primaryPart.Position.Y + 0.25
-	ServerFarmSceneTool.BindSign(primaryPart, "AnimalHealthGui", offsetY)
+	ServerFarmSceneTool.BindSign(primaryPart, "AnimalHealthGui", offsetY, "Public")
 end
 
 function ServerFarmSceneTool.GetAnimalPosition(info: ServerFarmTypes.AnimalInfo): Vector3
