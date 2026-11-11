@@ -22,6 +22,7 @@ description: Chicken Roblox 项目开发规范。处理本仓库代码、配置�
 - 命中与碰撞、客户端预测、高延迟或高频状态同步：[网络同步](references/network-sync.md)。
 - Excel 配表、转换命令或 JSON 映射：[配表维护](references/xlsx-json-maintenance.md)。
 - 用户明确提出优质实例需求（高品质 3D 模型/道具、专业 UI、精细特效 VFX）：[优质实例创建流程](../quality-instance-workflow/SKILL.md)。
+- 音频与音效需求（AI 生成、声学物理合成、Roblox Open Cloud 批量上云、ReplicatedStorage.Sounds 模板挂载或双重对象池业务接入）：读取 [音频资产全流程开发工作流](../roblox-audio-workflow/SKILL.md)。
 
 只读取当前任务需要的 reference。各 reference 自包含，不继续链接其他 reference。
 

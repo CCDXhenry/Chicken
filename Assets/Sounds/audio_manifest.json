@@ -1,0 +1,191 @@
+{
+  "kind": "chicken_farm_audio_manifest",
+  "groupId": "33977495",
+  "updatedAt": "2026-11-11T07:25:06.195641+00:00",
+  "sounds": {
+    "Zap_T1": {
+      "name": "Zap_T1",
+      "assetId": "117279309980671",
+      "rbxassetid": "rbxassetid://117279309980671",
+      "file": "Zap_T1.mp3",
+      "fileSize": 97009,
+      "uploadedAt": "2026-11-11T07:23:50.296290+00:00"
+    },
+    "Zap_T2": {
+      "name": "Zap_T2",
+      "assetId": "94932772789051",
+      "rbxassetid": "rbxassetid://94932772789051",
+      "file": "Zap_T2.mp3",
+      "fileSize": 19687,
+      "uploadedAt": "2026-11-11T07:23:52.596672+00:00"
+    },
+    "Zap_T3": {
+      "name": "Zap_T3",
+      "assetId": "138169065012356",
+      "rbxassetid": "rbxassetid://138169065012356",
+      "file": "Zap_T3.mp3",
+      "fileSize": 64408,
+      "uploadedAt": "2026-11-11T07:23:56.417776+00:00"
+    },
+    "Zap_T4": {
+      "name": "Zap_T4",
+      "assetId": "120031364533284",
+      "rbxassetid": "rbxassetid://120031364533284",
+      "file": "Zap_T4.mp3",
+      "fileSize": 65244,
+      "uploadedAt": "2026-11-11T07:24:00.215038+00:00"
+    },
+    "Zap_T5": {
+      "name": "Zap_T5",
+      "assetId": "77357440013942",
+      "rbxassetid": "rbxassetid://77357440013942",
+      "file": "Zap_T5.mp3",
+      "fileSize": 10031,
+      "uploadedAt": "2026-11-11T07:24:02.532142+00:00"
+    },
+    "AnimalHit": {
+      "name": "AnimalHit",
+      "assetId": "140660687436222",
+      "rbxassetid": "rbxassetid://140660687436222",
+      "file": "AnimalHit.mp3",
+      "fileSize": 4179,
+      "uploadedAt": "2026-11-11T07:24:04.823584+00:00"
+    },
+    "AnimalCooked": {
+      "name": "AnimalCooked",
+      "assetId": "80593443386902",
+      "rbxassetid": "rbxassetid://80593443386902",
+      "file": "AnimalCooked.mp3",
+      "fileSize": 9613,
+      "uploadedAt": "2026-11-11T07:24:08.517271+00:00"
+    },
+    "FoodDrop": {
+      "name": "FoodDrop",
+      "assetId": "122018158662276",
+      "rbxassetid": "rbxassetid://122018158662276",
+      "file": "FoodDrop.mp3",
+      "fileSize": 3343,
+      "uploadedAt": "2026-11-11T07:24:12.214800+00:00"
+    },
+    "Pickup": {
+      "name": "Pickup",
+      "assetId": "116193245698481",
+      "rbxassetid": "rbxassetid://116193245698481",
+      "file": "Pickup.mp3",
+      "fileSize": 4179,
+      "uploadedAt": "2026-11-11T07:24:14.548782+00:00"
+    },
+    "Warning": {
+      "name": "Warning",
+      "assetId": "139544431248523",
+      "rbxassetid": "rbxassetid://139544431248523",
+      "file": "Warning.mp3",
+      "fileSize": 6269,
+      "uploadedAt": "2026-11-11T07:24:18.237103+00:00"
+    },
+    "Delivery": {
+      "name": "Delivery",
+      "assetId": "110010134375873",
+      "rbxassetid": "rbxassetid://110010134375873",
+      "file": "Delivery.mp3",
+      "fileSize": 4597,
+      "uploadedAt": "2026-11-11T07:24:21.954469+00:00"
+    },
+    "PackageDone": {
+      "name": "PackageDone",
+      "assetId": "108411127650990",
+      "rbxassetid": "rbxassetid://108411127650990",
+      "file": "PackageDone.mp3",
+      "fileSize": 6687,
+      "uploadedAt": "2026-11-11T07:24:24.293356+00:00"
+    },
+    "Coin": {
+      "name": "Coin",
+      "assetId": "129374188512676",
+      "rbxassetid": "rbxassetid://129374188512676",
+      "file": "Coin.mp3",
+      "fileSize": 7941,
+      "uploadedAt": "2026-11-11T07:24:27.998344+00:00"
+    },
+    "EggSpawn": {
+      "name": "EggSpawn",
+      "assetId": "120842706973638",
+      "rbxassetid": "rbxassetid://120842706973638",
+      "file": "EggSpawn.mp3",
+      "fileSize": 5433,
+      "uploadedAt": "2026-11-11T07:24:31.747720+00:00"
+    },
+    "EggLand": {
+      "name": "EggLand",
+      "assetId": "100018245124478",
+      "rbxassetid": "rbxassetid://100018245124478",
+      "file": "EggLand.mp3",
+      "fileSize": 3343,
+      "uploadedAt": "2026-11-11T07:24:35.553601+00:00"
+    },
+    "EggSpeedup": {
+      "name": "EggSpeedup",
+      "assetId": "135459755858790",
+      "rbxassetid": "rbxassetid://135459755858790",
+      "file": "EggSpeedup.mp3",
+      "fileSize": 5015,
+      "uploadedAt": "2026-11-11T07:24:39.316346+00:00"
+    },
+    "EggHatch": {
+      "name": "EggHatch",
+      "assetId": "85490621899831",
+      "rbxassetid": "rbxassetid://85490621899831",
+      "file": "EggHatch.mp3",
+      "fileSize": 8777,
+      "uploadedAt": "2026-11-11T07:24:43.047541+00:00"
+    },
+    "AnimalScared": {
+      "name": "AnimalScared",
+      "assetId": "91870781734683",
+      "rbxassetid": "rbxassetid://91870781734683",
+      "file": "AnimalScared.mp3",
+      "fileSize": 6269,
+      "uploadedAt": "2026-11-11T07:24:46.783057+00:00"
+    },
+    "Upgrade": {
+      "name": "Upgrade",
+      "assetId": "71652904971849",
+      "rbxassetid": "rbxassetid://71652904971849",
+      "file": "Upgrade.mp3",
+      "fileSize": 10031,
+      "uploadedAt": "2026-11-11T07:24:50.519533+00:00"
+    },
+    "UIClick": {
+      "name": "UIClick",
+      "assetId": "106682020053205",
+      "rbxassetid": "rbxassetid://106682020053205",
+      "file": "UIClick.mp3",
+      "fileSize": 2089,
+      "uploadedAt": "2026-11-11T07:24:54.292377+00:00"
+    },
+    "UIOpen": {
+      "name": "UIOpen",
+      "assetId": "92077244706217",
+      "rbxassetid": "rbxassetid://92077244706217",
+      "file": "UIOpen.mp3",
+      "fileSize": 4179,
+      "uploadedAt": "2026-11-11T07:24:58.031167+00:00"
+    },
+    "UIClose": {
+      "name": "UIClose",
+      "assetId": "124831536207012",
+      "rbxassetid": "rbxassetid://124831536207012",
+      "file": "UIClose.mp3",
+      "fileSize": 3343,
+      "uploadedAt": "2026-11-11T07:25:01.800700+00:00"
+    },
+    "BGM": {
+      "name": "BGM",
+      "assetId": "78050720932794",
+      "rbxassetid": "rbxassetid://78050720932794",
+      "file": "BGM.mp3",
+      "fileSize": 192679,
+      "uploadedAt": "2026-11-11T07:25:05.694508+00:00"
+    }
+  }
+}
