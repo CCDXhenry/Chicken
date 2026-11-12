@@ -28,10 +28,10 @@ Check(Migration.Update(old) and old.farm.cash==90,'repeated migration preserves 
 Check(not Migration.Update({dataVersion=99}),'future player version rejected')
 Check(not Migration.Update({dataVersion=0/0}),'NaN player version rejected')
 Check(not Migration.Update({dataVersion=1,farm={}}),'corrupt farm is rejected instead of reset')
-local cargo={itemId='basket',speciesId='rabbit',qualityId='golden',weightKg=6,saleValue=500,packSeconds=2.52,configVersion=1}
+local cargo={itemId='basket',speciesId='rabbit',qualityId='golden',weightKg=6,saleValue=500,configVersion=1}
 table.insert(old.farm.basket,cargo)
 local orderCargo=table.clone(cargo); orderCargo.itemId='processing'
-table.insert(old.farm.kitchen,{cargo=orderCargo,state='Processing',remainingSeconds=1.1,speedSnapshot=1.35,durationSnapshot=2.52/1.35})
+table.insert(old.farm.kitchen,{cargo=orderCargo,state='Processing',remainingSeconds=1.1,speedSnapshot=1.35,durationSnapshot=6/1.35})
 local restored=serde.decode('json',serde.encode('json',old.farm))
 Check(Save.Validate(restored) and restored.basket[1].saleValue==500,'cargo snapshot JSON round trip')
 Check(restored.ownedWeapons['1'] and restored.weaponLevels['1']==1,'string map keys retained')

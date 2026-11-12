@@ -18,7 +18,6 @@ export type Species = {
 	weightKg: number,
 	saleValue: number,
 	unlockPrice: number,
-	packSeconds: number,
 	instantHatchPrice: number,
 }
 export type Quality = {
@@ -34,7 +33,6 @@ export type Quality = {
 	weightMultiplier: number,
 	valueMultiplier: number,
 	hatchMultiplier: number,
-	packMultiplier: number,
 	visualScale: number,
 }
 export type Weapon = {
@@ -53,7 +51,7 @@ export type Basket = {
 }
 export type Restaurant = {
 	id: number?, level: number?, name_t: string?, description_t: string?,
-	workers: number, speed: number, price: number,
+	workers: number, speed: number, price: number, -- speed：每名服务员每秒打包重量，kg/s
 }
 type DataRow = { [string]: any }
 
@@ -180,7 +178,6 @@ for index, row in LoadRows("SpeciesData") do
 		weightKg = NumberField(row, "weightKg"),
 		saleValue = NumberField(row, "saleValue"),
 		unlockPrice = NumberField(row, "unlockPrice"),
-		packSeconds = NumberField(row, "packSeconds"),
 		instantHatchPrice = NumberField(row, "instantHatchPrice"),
 	}
 	table.insert(speciesList, speciesRow)
@@ -242,7 +239,6 @@ for index, row in LoadRows("QualityData") do
 		weightMultiplier = NumberField(row, "weightMultiplier"),
 		valueMultiplier = NumberField(row, "valueMultiplier"),
 		hatchMultiplier = NumberField(row, "hatchMultiplier"),
-		packMultiplier = NumberField(row, "packMultiplier"),
 		visualScale = NumberField(row, "visualScale"),
 	}
 	probability += quality.probability
@@ -303,7 +299,7 @@ for index, row in LoadRows("BasketData") do
 end
 assert(#baskets == 5, "Five basket tiers are required")
 Config.Baskets = baskets
--- 接单时记录单人速度倍率；升级不追溯修改正在打包的订单，费用为金币。
+-- 接单时记录单人打包速度（kg/s）；升级不追溯修改正在打包的订单，费用为金币。
 local restaurants: { Restaurant } = {}
 for index, row in LoadRows("RestaurantData") do
 	table.insert(restaurants, {
@@ -317,6 +313,9 @@ for index, row in LoadRows("RestaurantData") do
 	})
 end
 assert(#restaurants == 5, "Five restaurant levels are required")
+for _, restaurant in restaurants do
+	assert(restaurant.speed > 0 and restaurant.speed < math.huge, "Restaurant speed must be finite and positive (kg/s)")
+end
 Config.Restaurants = restaurants
 
 function Config.GetSpecies(id: any): Species?

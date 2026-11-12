@@ -14,7 +14,6 @@ function FarmBusiness.CreateCargo(itemId: string, speciesId: string, qualityId: 
 		itemId = itemId, speciesId = speciesId, qualityId = qualityId,
 		weightKg = species.weightKg * quality.weightMultiplier,
 		saleValue = species.saleValue * quality.valueMultiplier,
-		packSeconds = species.packSeconds * quality.packMultiplier,
 		configVersion = Config.Version,
 	}
 end
@@ -70,7 +69,7 @@ function FarmBusiness.TickKitchen(farm: FarmSave, dt: number): (number, number)
 		if order.state == "Waiting" then
 			order.state = "Processing"
 			order.speedSnapshot = restaurant.speed
-			order.durationSnapshot = order.cargo.packSeconds / restaurant.speed
+			order.durationSnapshot = order.cargo.weightKg / restaurant.speed
 			order.remainingSeconds = order.durationSnapshot
 			processing += 1
 		end

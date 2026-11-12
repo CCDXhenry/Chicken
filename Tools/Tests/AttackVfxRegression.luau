@@ -429,7 +429,7 @@ muzzle.ClassName = "Attachment"
 task.wait(0.75)
 local function ActiveLabelCount()
 	local count = 0
-	for _, slot in manager.damagePool do
+	for _, slot in manager.pickupPool do
 		if slot.active then
 			count += 1
 		end
@@ -437,7 +437,7 @@ local function ActiveLabelCount()
 	return count
 end
 local function LabelWith(text)
-	for _, slot in manager.damagePool do
+	for _, slot in manager.pickupPool do
 		if slot.active and slot.label.Text == text then
 			return slot
 		end
@@ -452,6 +452,19 @@ manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
 Check(ActiveLabelCount() == 1, "same species and quality occupy one row")
 Check(LabelWith("Chicken x3 (+3.0 kg)") ~= nil, "same food accumulates count and total weight")
 Check(#sounds - soundsBefore == 3, "each physical pickup still plays a sound")
+Check(#manager.pickupPool == 2, "pickup rows have their own two-slot pool")
+table.remove(character.children, table.find(character.children, weapon))
+for _ = 1, 3 do
+	manager:UpdateAttacks(0.016)
+end
+local pickupSlot = LabelWith("Chicken x3 (+3.0 kg)")
+Check(pickupSlot ~= nil and pickupSlot.gui.Enabled, "pickup remains visible across frames without an equipped gun")
+table.insert(character.children, weapon)
+for i = 1, 25 do
+	manager:SpawnFloatingText(Vector3.zero, "-" .. i)
+end
+manager:ClearAttacks()
+Check(LabelWith("Chicken x3 (+3.0 kg)") == pickupSlot and pickupSlot.gui.Enabled, "damage pool exhaustion and attack cleanup preserve pickup rows")
 task.wait(0.7)
 Check(ActiveLabelCount() == 0, "merged pickup row retires after its hold")
 

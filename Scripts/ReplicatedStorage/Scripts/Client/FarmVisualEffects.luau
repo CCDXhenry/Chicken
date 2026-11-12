@@ -110,6 +110,7 @@ export type VfxManager = typeof(setmetatable(
 		camera: Camera?,
 		characterScope: LifecycleTool.Lifecycle,
 		damagePool: { DamageLabelSlot },
+		pickupPool: { DamageLabelSlot },
 		muzzlePool: { VfxSlot },
 		arcPool: { VfxSlot },
 		activeArcs: { ArcPlayback },
@@ -213,6 +214,7 @@ function FarmVisualEffects.new(): VfxManager
 		camera = nil,
 		characterScope = LifecycleTool.new(),
 		damagePool = {},
+		pickupPool = {},
 		muzzlePool = {},
 		arcPool = {},
 		activeArcs = {},
@@ -449,16 +451,18 @@ function FarmVisualEffects.Init(self: VfxManager): ()
 
 	local playerGui = localPlayer:WaitForChild("PlayerGui")
 	local damageTemplate = ReplicatedStorage:WaitForChild("UI"):WaitForChild("DamagePopGui") :: BillboardGui
-	for i = 1, 24 do
+	-- 拾取提示独立持有两行，避免收起武器时被攻击清理或伤害飘字复用。
+	for i = 1, 26 do
+		local isPickup = i > 24
 		local gui = damageTemplate:Clone()
-		gui.Name = "DamagePopGui_" .. i
+		gui.Name = if isPickup then "PickupPopGui_" .. (i - 24) else "DamagePopGui_" .. i
 		local frame = gui:WaitForChild("DamageFrame") :: Frame
 		local scale = frame:WaitForChild("UIScale") :: UIScale
 		local label = frame:WaitForChild("DamageText") :: TextLabel
 		local stroke = label:WaitForChild("UIStroke") :: UIStroke
 
 		gui.Parent = playerGui
-		table.insert(self.damagePool, {
+		table.insert(if isPickup then self.pickupPool else self.damagePool, {
 			gui = gui,
 			label = label,
 			stroke = stroke,
@@ -1080,14 +1084,14 @@ end
 local function ShowPickupRow(self: VfxManager, rowIndex: number, notice: PickupNotice, fallbackPos: Vector3): boolean
 	local adornee = EnsurePickupAnchor(self, fallbackPos)
 	local slot: DamageLabelSlot? = nil
-	for _, candidate in self.damagePool do
+	for _, candidate in self.pickupPool do
 		if not candidate.active then
 			slot = candidate
 			break
 		end
 	end
 	if not slot then
-		slot = self.damagePool[1]
+		slot = self.pickupPool[1]
 	end
 	if not slot then
 		if not self.pickupRows[1] and not self.pickupRows[2] then
@@ -1326,10 +1330,13 @@ function FarmVisualEffects.Destroy(self: VfxManager): ()
 			HideSlot(slot, self.poolFolder)
 		end
 	end
-	for _, slot in self.damagePool do
-		slot.gui:Destroy()
+	for _, pool in { self.damagePool, self.pickupPool } do
+		for _, slot in pool do
+			slot.gui:Destroy()
+		end
 	end
 	self.damagePool = {}
+	self.pickupPool = {}
 	self.muzzlePool = {}
 	self.arcPool = {}
 	self.hitPool = {}

@@ -13,7 +13,7 @@ local function Reject(value: unknown, message: string): ()
 	Check(not valid, message)
 end
 local function Cargo(id: string): Save.Cargo
-	return { itemId = id, speciesId = "rabbit", qualityId = "golden", weightKg = 6, saleValue = 500, packSeconds = 2.52, configVersion = 1 }
+	return { itemId = id, speciesId = "rabbit", qualityId = "golden", weightKg = 6, saleValue = 500, configVersion = 1 }
 end
 
 Check(#Config.Species == 5 and #Config.Weapons == 5 and #Config.Collectors == 5 and #Config.Baskets == 5 and #Config.Restaurants == 5, "all five tiers exist")
@@ -46,7 +46,7 @@ first.weaponLevels["1"] = 2
 table.insert(first.basket, Cargo("basket-1"))
 Check(second.cash == 0 and second.weaponLevels["1"] == 1 and #second.basket == 0, "defaults do not share mutable fields")
 Check(Save.Validate(first), "default plus valid cargo")
-table.insert(first.kitchen, { cargo = Cargo("order-1"), state = "Processing", remainingSeconds = 1.1, speedSnapshot = 1.35, durationSnapshot = 2.52 / 1.35 })
+table.insert(first.kitchen, { cargo = Cargo("order-1"), state = "Processing", remainingSeconds = 1.1, speedSnapshot = 1.35, durationSnapshot = 6 / 1.35 })
 local snapshot = Save.Copy(first)
 first.basket[1].saleValue = 999
 first.kitchen[1].remainingSeconds = 0

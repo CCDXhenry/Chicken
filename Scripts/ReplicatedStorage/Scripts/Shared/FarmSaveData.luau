@@ -6,14 +6,13 @@ export type Cargo = {
 	qualityId: string,
 	weightKg: number,
 	saleValue: number,
-	packSeconds: number,
 	configVersion: number,
 }
 export type Order = {
 	cargo: Cargo,
 	state: "Waiting" | "Processing",
 	remainingSeconds: number,
-	speedSnapshot: number,
+	speedSnapshot: number, -- 接单时的单人打包速度，kg/s
 	durationSnapshot: number,
 }
 export type FarmSave = {
@@ -56,7 +55,7 @@ local function ValidateCargo(value: unknown, seen: { [string]: boolean }): boole
 	if type(id) ~= "string" or not IsId(id) or seen[id] then return false end
 	if type(cargo.speciesId) ~= "string" or not SpeciesIds[cargo.speciesId] then return false end
 	if type(cargo.qualityId) ~= "string" or not QualityIds[cargo.qualityId] then return false end
-	if not IsPositive(cargo.weightKg) or not IsPositive(cargo.packSeconds) then return false end
+	if not IsPositive(cargo.weightKg) then return false end
 	if not IsInteger(cargo.saleValue, 0, 9007199254740991) or not IsInteger(cargo.configVersion, 1, FarmSaveData.Version) then return false end
 	seen[id] = true
 	return true
@@ -74,7 +73,7 @@ end
 local function CopyCargo(cargo: Cargo): Cargo
 	return {
 		itemId = cargo.itemId, speciesId = cargo.speciesId, qualityId = cargo.qualityId,
-		weightKg = cargo.weightKg, saleValue = cargo.saleValue, packSeconds = cargo.packSeconds,
+		weightKg = cargo.weightKg, saleValue = cargo.saleValue,
 		configVersion = cargo.configVersion,
 	}
 end

@@ -50,8 +50,8 @@ function Purchase.Bind(ctx: Common.Context, action: string): ()
 			step = info.restaurantLevel
 			local a, b = Config.Restaurants[step], Config.Restaurants[step + 1]
 			name = "Restaurant level " .. step
-			current = a.workers .. " workers  /  " .. a.speed .. "x speed"
-			if b then price = b.price; nextValue = b.workers .. " workers  /  " .. b.speed .. "x speed" else nextValue = "Your restaurant is fully upgraded" end
+			current = a.workers .. " workers  /  " .. a.speed .. " kg/s each"
+			if b then price = b.price; nextValue = b.workers .. " workers  /  " .. b.speed .. " kg/s each" else nextValue = "Your restaurant is fully upgraded" end
 			extra = (info.waiting or 0) .. " waiting / " .. (info.processing or 0) .. " cooking / " .. (info.expectedValue or 0) .. " coins"
 		end
 		Common.Wallet(ctx)

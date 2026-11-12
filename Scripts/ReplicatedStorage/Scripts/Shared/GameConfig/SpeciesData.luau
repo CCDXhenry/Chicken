@@ -13,7 +13,6 @@ return {
 		["weightKg"] = 1,
 		["saleValue"] = 10,
 		["unlockPrice"] = 0,
-		["packSeconds"] = 1.8,
 		["instantHatchPrice"] = 5,
 	},
 	[2] = {
@@ -29,7 +28,6 @@ return {
 		["weightKg"] = 3,
 		["saleValue"] = 50,
 		["unlockPrice"] = 300,
-		["packSeconds"] = 2.1,
 		["instantHatchPrice"] = 25,
 	},
 	[3] = {
@@ -45,7 +43,6 @@ return {
 		["weightKg"] = 9,
 		["saleValue"] = 250,
 		["unlockPrice"] = 1500,
-		["packSeconds"] = 2.5,
 		["instantHatchPrice"] = 125,
 	},
 	[4] = {
@@ -61,7 +58,6 @@ return {
 		["weightKg"] = 27,
 		["saleValue"] = 1250,
 		["unlockPrice"] = 7500,
-		["packSeconds"] = 4.6,
 		["instantHatchPrice"] = 625,
 	},
 	[5] = {
@@ -77,7 +73,6 @@ return {
 		["weightKg"] = 81,
 		["saleValue"] = 6250,
 		["unlockPrice"] = 37500,
-		["packSeconds"] = 5.5,
 		["instantHatchPrice"] = 3125,
 	},
 }

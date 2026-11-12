@@ -133,9 +133,9 @@ local success, failure = xpcall(function(): boolean
 	assert(#first.farm.basket == 1)
 	manager:Update(200 + Config.UnloadIntervalSeconds + 0.001, 0)
 	assert(#first.farm.basket == 0 and #first.farm.kitchen == 1 and first.farm.kitchen[1].cargo.itemId == id)
-	manager:Update(202, Config.Species[1].packSeconds)
+	manager:Update(202, Config.Species[1].weightKg / Config.Restaurants[1].speed)
 	assert(first.farm.cash == 10 and second.farm.cash == 0 and #first.farm.kitchen == 0)
-	manager:Update(204, Config.Species[1].packSeconds)
+	manager:Update(204, Config.Species[1].weightKg / Config.Restaurants[1].speed)
 	assert(first.farm.cash == 10)
 	table.insert(checks, "First unload waits 0.15 seconds; first sale 10; repeated settlement rejected")
 	local secondAnimal = nil
@@ -153,7 +153,7 @@ local success, failure = xpcall(function(): boolean
 	root2.CFrame = secondSell.CFrame + Vector3.yAxis * 2
 	manager:Update(205, 0)
 	manager:Update(205 + Config.UnloadIntervalSeconds + 0.001, 0)
-	manager:Update(207, Config.Species[1].packSeconds)
+	manager:Update(207, Config.Species[1].weightKg / Config.Restaurants[1].speed)
 	assert(second.farm.cash == 10 and first.farm.cash == 10 and #second.farm.kitchen == 0)
 	table.insert(checks, "Opposite rotated farms both finish kill, pickup, delivery and independent sale")
 
