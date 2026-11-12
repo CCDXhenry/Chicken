@@ -67,6 +67,13 @@ local function RestoreSound(sound: Sound, template: Sound)
 	end
 end
 
+-- 回收后的实例会带着上次的音量和播放速度，取出时先回到模板
+local function ResetPlayback(sound: Sound, template: Sound): ()
+	sound.Volume = template.Volume
+	sound.PlaybackSpeed = template.PlaybackSpeed
+	sound.TimePosition = 0
+end
+
 -- 从对象池获取或实例化 Sound
 local function GetSoundFromPool(soundTemplate: Sound): Sound?
 	local pool = soundsPools[soundTemplate]
@@ -87,6 +94,7 @@ local function GetSoundFromPool(soundTemplate: Sound): Sound?
 
 	local recycled = table.remove(pool)
 	if recycled then
+		ResetPlayback(recycled, soundTemplate)
 		return recycled
 	end
 
@@ -173,8 +181,10 @@ function FarmSoundTool.Play(soundName: string, soundPosition: Vector3?, volumeMu
 		sound = FarmSoundTool.PlayGlobal(template, false)
 	end
 
-	if sound and volumeMultiplier then
-		sound.Volume = template.Volume * volumeMultiplier
+	if sound then
+		local multiplier = if volumeMultiplier ~= nil then volumeMultiplier else 1
+		sound.Volume = template.Volume * multiplier
+		sound.PlaybackSpeed = template.PlaybackSpeed
 	end
 
 	return sound

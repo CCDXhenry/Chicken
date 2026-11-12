@@ -1,12 +1,9 @@
 -- 游戏全局配置中枢：负责维护全局版本、初始值与调试控制、非配表规则、配表子模块与字典索引
 --!strict
-local replicatedStorage: ReplicatedStorage? = if game then game:GetService("ReplicatedStorage") else nil
 local GameConfig = {}
 
-local FarmSaveData: any
-if script and script.Parent then
-	FarmSaveData = require(script.Parent:WaitForChild("FarmSaveData"))
-else
+local FarmSaveData = if script and script.Parent then require(script.Parent:WaitForChild("FarmSaveData")) else nil
+if not FarmSaveData then
 	local ok, mod = pcall(require, "../FarmSaveData")
 	if ok then
 		FarmSaveData = mod
@@ -18,18 +15,17 @@ else
 			local ok3, mod3 = pcall(require, "../../Scripts/ReplicatedStorage/Scripts/Shared/FarmSaveData")
 			if ok3 then
 				FarmSaveData = mod3
+			else
+				error("FarmSaveData is required")
 			end
 		end
 	end
 end
+assert(FarmSaveData, "FarmSaveData is required")
 
-local DateTimeExtension: any = nil
-if replicatedStorage then
-	local core = replicatedStorage:WaitForChild("Core")
-	local coreScripts = core:WaitForChild("Scripts")
-	local coreSharedScripts = coreScripts:WaitForChild("Shared")
-	DateTimeExtension = require(coreSharedScripts:FindFirstChild("DateTimeExtension"))
-end
+local DateTimeExtension = if script
+	then require(script.Parent.Parent.Parent.Core.Scripts.Shared.DateTimeExtension)
+	else nil
 
 -- =========================================================
 -- 1. 基础版本与环境配置
@@ -170,12 +166,25 @@ GameConfig.UIRules = {
 -- =========================================================
 -- 8. 配表子模块引入与索引字典构建 (对标 ModelCapture)
 -- =========================================================
+local function LoadStudioChild(moduleName: string): any
+	if moduleName == "SpeciesData" then
+		return require(script:WaitForChild("SpeciesData"))
+	elseif moduleName == "QualityData" then
+		return require(script:WaitForChild("QualityData"))
+	elseif moduleName == "WeaponData" then
+		return require(script:WaitForChild("WeaponData"))
+	elseif moduleName == "CollectorData" then
+		return require(script:WaitForChild("CollectorData"))
+	elseif moduleName == "BasketData" then
+		return require(script:WaitForChild("BasketData"))
+	elseif moduleName == "RestaurantData" then
+		return require(script:WaitForChild("RestaurantData"))
+	end
+	error("Unknown config module " .. moduleName)
+end
 local function LoadChildModule(moduleName: string): any
 	if script then
-		local child = script:FindFirstChild(moduleName)
-		if child and child:IsA("ModuleScript") then
-			return require(child)
-		end
+		return LoadStudioChild(moduleName)
 	end
 	local ok, res = pcall(require, "./" .. moduleName)
 	if ok then return res end
@@ -252,7 +261,7 @@ export type PlayerSaveInfo = {
 	lastOnlineDateUTC: number,
 	settingInfo: SettingInfo,
 	ownedGamePassList: { number },
-	farm: FarmSaveData.FarmSave,
+	farm: typeof(require(script.Parent:WaitForChild("FarmSaveData")).CreateDefault()),
 }
 
 export type PlayerInfo = PlayerSaveInfo & {

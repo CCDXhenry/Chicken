@@ -80,7 +80,12 @@ local function CopyCargo(cargo: Cargo): Cargo
 end
 
 function FarmSaveData.CreateDefault(overrideInitialValues: { [string]: any }?): FarmSave
-	local initial = overrideInitialValues or {}
+	local initial: { [string]: any }
+	if overrideInitialValues ~= nil then
+		initial = overrideInitialValues
+	else
+		initial = {}
+	end
 	local initialUnlocked: { [string]: boolean } = { chicken = true }
 	if initial.UnlockedSpecies then
 		for k, v in initial.UnlockedSpecies do

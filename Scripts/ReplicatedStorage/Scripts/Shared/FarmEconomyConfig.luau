@@ -139,12 +139,16 @@ local function NumberList(row: DataRow, field: string): { number }
 	return result
 end
 local function SpeciesIdOf(value: string): SpeciesId
-	assert(value == "chicken" or value == "rabbit" or value == "sheep" or value == "cow" or value == "dragon", value)
-	return value :: SpeciesId
+	if value == "chicken" or value == "rabbit" or value == "sheep" or value == "cow" or value == "dragon" then
+		return value
+	end
+	error(value)
 end
 local function QualityIdOf(value: string): QualityId
-	assert(value == "normal" or value == "golden" or value == "rainbow" or value == "giant", value)
-	return value :: QualityId
+	if value == "normal" or value == "golden" or value == "rainbow" or value == "giant" then
+		return value
+	end
+	error(value)
 end
 local function WeaponMode(value: string): "single" | "chain" | "cone"
 	assert(value == "single" or value == "chain" or value == "cone", value)
@@ -157,10 +161,10 @@ for index, row in LoadRows("SpeciesData") do
 	local tier = NumberField(row, "tier")
 	assert(tier == index, "Species tier must match row order")
 	local idNum = if row.id ~= nil then NumberField(row, "id") else index
-	local keyVal = SpeciesIdOf(StringField(row, "key"))
+	local keyVal: SpeciesId = SpeciesIdOf(StringField(row, "key"))
 	local nameVal = if row.name_t ~= nil then StringField(row, "name_t") else StringField(row, "name")
 	local foodNameVal = if row.foodName_t ~= nil then StringField(row, "foodName_t") else StringField(row, "foodName")
-	table.insert(speciesList, {
+	local speciesRow: Species = {
 		id = idNum,
 		key = keyVal,
 		speciesId = keyVal,
@@ -178,7 +182,8 @@ for index, row in LoadRows("SpeciesData") do
 		unlockPrice = NumberField(row, "unlockPrice"),
 		packSeconds = NumberField(row, "packSeconds"),
 		instantHatchPrice = NumberField(row, "instantHatchPrice"),
-	})
+	}
+	table.insert(speciesList, speciesRow)
 end
 assert(#speciesList == 5, "Five species tiers are required")
 Config.Species = speciesList
@@ -223,7 +228,7 @@ local qualities: { Quality } = {}
 local probability = 0
 for index, row in LoadRows("QualityData") do
 	local idNum = if row.id ~= nil then NumberField(row, "id") else index
-	local keyVal = QualityIdOf(StringField(row, "key"))
+	local keyVal: QualityId = QualityIdOf(StringField(row, "key"))
 	local quality: Quality = {
 		id = idNum,
 		key = keyVal,
