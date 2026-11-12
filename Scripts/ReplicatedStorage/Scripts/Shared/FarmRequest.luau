@@ -8,9 +8,14 @@ export type Request = {
 	tier: number?,
 	confirmationId: string?,
 	aim: { x: number, y: number, z: number }?,
+	targetIds: { string }?,
 	expectedStep: number?,
 }
 local FarmRequest = {}
+local MaximumReportedTargets = 1
+for _, weapon in Config.Weapons do
+	MaximumReportedTargets = math.max(MaximumReportedTargets, weapon.maximumTargets)
+end
 local SimpleActions = { zap = true, collect = true, buyZap = true, buyCollect = true, buyNest = true, buyRestaurant = true, buyBasket = true, enhanceWeapon = true }
 local SpeciesIds = { chicken = true, rabbit = true, sheep = true, cow = true, dragon = true }
 local function IsId(value: unknown): boolean
@@ -36,6 +41,18 @@ function FarmRequest.Parse(value: unknown): Request?
 			local length = math.sqrt(x*x+y*y+z*z)
 			if length ~= length or length < 1e-4 or length == math.huge then return nil end
 			request.aim = { x = x / length, y = y / length, z = z / length }
+		end
+		if action == "zap" and data.targetIds ~= nil then
+			if type(data.targetIds) ~= "table" then return nil end
+			local rawIds = data.targetIds :: { unknown }
+			if #rawIds > MaximumReportedTargets then return nil end
+			local targetIds: { string } = {}
+			for _, id in rawIds do
+				if not IsId(id) then return nil end
+				table.insert(targetIds, id :: string)
+				if #targetIds > MaximumReportedTargets then return nil end
+			end
+			request.targetIds = targetIds
 		end
 		return request
 	end

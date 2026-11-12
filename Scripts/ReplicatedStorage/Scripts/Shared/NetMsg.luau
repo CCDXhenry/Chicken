@@ -215,4 +215,46 @@ function NetMsg.ConnectNotifyFarmFeedback(callback: (string, string?) -> ()): RB
 	end
 	return roastChickenActionEvent.OnClientEvent:Connect(OnFeedback)
 end
+
+export type VisualTarget = {
+	x: number,
+	y: number,
+	z: number,
+	damage: number,
+	isCooked: boolean,
+	id: string?,
+}
+
+export type VisualEvent = {
+	kind: string,
+	fromPos: { x: number, y: number, z: number }?,
+	toPos: { x: number, y: number, z: number }?,
+	tier: number?,
+	speciesId: string?,
+	qualityId: string?,
+	damage: number?,
+	isCooked: boolean?,
+	weightKg: number?,
+	count: number?,
+	targets: { VisualTarget }?,
+}
+
+-- 客户端轻量视觉事件通知 (电击轨迹/熟食飞入鸡筐/交货丰收抛跃)
+function NetMsg.FireNotifyFarmVisual(player: Player, event: VisualEvent): ()
+	roastChickenActionEvent:FireClient(player, event)
+end
+
+function NetMsg.FireNotifyFarmVisualAll(event: VisualEvent): ()
+	roastChickenActionEvent:FireAllClients(event)
+end
+
+function NetMsg.ConnectNotifyFarmVisual(callback: (VisualEvent) -> ()): RBXScriptConnection
+	local function OnVisual(payload: unknown): ()
+		if typeof(payload) == "table" and typeof((payload :: any).kind) == "string" then
+			callback(payload :: VisualEvent)
+		end
+	end
+	return roastChickenActionEvent.OnClientEvent:Connect(OnVisual)
+end
+
 return NetMsg
