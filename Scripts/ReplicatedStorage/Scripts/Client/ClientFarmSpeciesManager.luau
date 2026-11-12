@@ -112,7 +112,7 @@ function Manager.CloseMain(self: ClientFarmSpeciesManager): ()
 end
 function Manager.Open(self: ClientFarmSpeciesManager, id: string, entry: BasePart?): ()
 	if UIManager.IsWindowShowing("FarmConfirmation") or not Info.GetFarmInfo().ready then return end
-	local fromHud = (entry == nil and (id == "ToolShop" or id == "Species" or id == "Equipment"))
+	local fromHud = (entry == nil and (id == "ToolShop" or id == "Species" or id == "Equipment" or (self.fromHud == true and Rules.ToolWindows[id] == true)))
 	local source = entry or (if fromHud then nil else self.entry)
 	if id ~= "Equipment" and id ~= "Hatch" and not fromHud then
 		if not source or not InRange(source) then return end

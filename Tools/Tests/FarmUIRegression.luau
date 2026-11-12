@@ -42,6 +42,13 @@ local success, failure = xpcall(function(): boolean
 		manager:CloseMain()
 	end
 	table.insert(checks, "9 independent routes and exclusive modal windows")
+	manager:Open("WeaponShop")
+	assert(not UI.IsWindowShowing("FarmWeaponShop"), "Weapon shop opened without a tool shop session")
+	manager:Open("ToolShop")
+	manager:Open("WeaponShop")
+	assert(UI.IsWindowShowing("FarmWeaponShop"), "HUD tool shop view failed")
+	manager:CloseMain()
+	table.insert(checks, "HUD tool shop opens weapon shop and rejects a bare weapon route")
 	character:PivotTo(entries.ToolShop.CFrame * CFrame.new(0,3,0))
 	manager:Open("WeaponEnhance", entries.ToolShop)
 	local frame = screen:FindFirstChild("FarmWeaponEnhanceFrame") :: Frame

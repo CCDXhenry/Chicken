@@ -47,16 +47,37 @@ Check(#hits == 4 and hits[1].id == "a" and hits[2].id == "b" and hits[3].id == "
 hits = Combat.ResolveShot(1, 5, 0, 0, 0, 0, 1, { Target("a", 0, 4, 2), Target("b", 0, 5, 2) })
 Check(#hits == 1 and hits[1].damage == 2, "single weapon discards remainder")
 hits = Combat.ResolveShot(3, 1, 0, 0, 0, 0, 1, { Target("a", 0, 4, 6), Target("b", 0, 5, 6), Target("c", 0, 6, 6), Target("behind", 0, -4, 1), Target("outside", 10, 1, 1) })
-Check(#hits == 3 and hits[1].damage + hits[2].damage + hits[3].damage == 18, "cone shares budget and excludes outside sector")
+Check(#hits == 3 and hits[1].damage == 6 and hits[2].damage == 6 and hits[3].damage == 6, "cone shares budget and excludes outside sector")
+hits = Combat.ResolveShot(3, 1, 0, 0, 0, 0, 1, { Target("a", 0, 4, 100), Target("b", 0, 5, 100), Target("c", 0, 6, 100) })
+Check(#hits == 3 and hits[1].damage == 6 and hits[2].damage == 6 and hits[3].damage == 6, "cone splits a full-health group instead of dumping the shot into the first target")
+hits = Combat.ResolveShot(3, 1, 0, 0, 0, 0, 1, { Target("low", 0, 4, 2), Target("mid", 0, 5, 100), Target("far", 0, 6, 100) })
+Check(hits[1].damage == 2 and hits[2].damage == 6 and hits[3].damage == 6, "cone does not move an unused share onto later targets")
+local fatTargets: { Combat.Candidate } = {}
+for i = 1, 5 do table.insert(fatTargets, Target("fat" .. tostring(i), 0, i + 1, 100)) end
+hits = Combat.ResolveShot(3, 1, 0, 0, 0, 0, 1, fatTargets)
+Check(#hits == 5 and hits[1].damage == 4 and hits[2].damage == 4 and hits[3].damage == 4 and hits[4].damage == 3 and hits[5].damage == 3, "cone gives leftover damage points to the nearest targets")
 local crowd: { Combat.Candidate } = {}
 for i = 1, 10 do table.insert(crowd, Target(tostring(i), 0, i + 1, 1)) end
 hits = Combat.ResolveShot(3, 1, 0, 0, 0, 0, 1, crowd)
 Check(#hits == 5, "cone target count cap")
+local trusted = Combat.ApplyOrderedHits(3, 1, { { id = "far", health = 100 }, { id = "near", health = 100 } })
+Check(#trusted == 2 and trusted[1].damage == 9 and trusted[2].damage == 9, "ordered cone split ignores positions")
+local chained = Combat.ApplyOrderedHits(2, 3, { { id = "a", health = 20 }, { id = "b", health = 6 } })
+Check(#chained == 1 and chained[1].damage == 12, "ordered chain stops when the first target consumes the shot")
+local single = Combat.ApplyOrderedHits(1, 5, { { id = "a", health = 2 }, { id = "b", health = 2 } })
+Check(#single == 1 and single[1].id == "a" and single[1].damage == 2, "ordered single weapon ignores extra targets")
 hits = Combat.ResolveShot(1, 1, 0, 0, 0, 0, 1, { Target("above", 0, 1, 2, 100) })
 Check(#hits == 0, "vertical distance counts toward range")
 Check(Request.Parse({ action = "zap", aim = { x = 0/0, y = 0, z = 1 } }) == nil, "NaN aim rejected")
 Check(Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 0 } }) == nil, "zero aim rejected")
 Check(Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 1 } }) ~= nil, "finite normalized aim accepted")
+local acceptedTargets = Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 1 }, targetIds = { "a", "b" } })
+Check(acceptedTargets ~= nil and acceptedTargets.targetIds ~= nil and acceptedTargets.targetIds[1] == "a" and acceptedTargets.targetIds[2] == "b", "zap target ids accepted in order")
+local tooManyTargets = {}
+for i = 1, 10 do table.insert(tooManyTargets, "id" .. tostring(i)) end
+Check(Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 1 }, targetIds = tooManyTargets }) == nil, "zap rejects more than nine targets")
+Check(Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 1 }, targetIds = { "" } }) == nil, "zap rejects an empty target id")
+Check(Request.Parse({ action = "zap", aim = { x = 0, y = 0, z = 1 }, targetIds = "nope" }) == nil, "zap rejects a non-list target payload")
 local replayFarm = Save.CreateDefault()
 replayFarm.cash = 1000
 local step = Business.GetPurchaseStep(replayFarm, "buyZap")

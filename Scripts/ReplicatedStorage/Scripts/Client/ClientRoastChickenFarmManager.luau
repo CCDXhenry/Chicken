@@ -3,23 +3,34 @@
 local contextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local Workspace = game:GetService("Workspace")
 local players = game:GetService("Players")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
 local NetMsg = require(sharedScripts:WaitForChild("NetMsg"))
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
+local Economy = require(sharedScripts:WaitForChild("FarmEconomyConfig"))
+local CombatRules = require(sharedScripts:WaitForChild("FarmCombatRules"))
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local ClientGameInfo = require(script.Parent:WaitForChild("ClientGameInfo"))
 local RoastChickenHUDFrame = require(script.Parent:WaitForChild("RoastChickenHUDFrame"))
 local SpeciesManager = require(script.Parent:WaitForChild("ClientFarmSpeciesManager"))
 local UIManager = require(script.Parent:WaitForChild("UIManager"))
 local FarmSoundTool = require(sharedScripts:WaitForChild("FarmSoundTool"))
+local VisualEffects = require(script.Parent:WaitForChild("FarmVisualEffects"))
 
 local localPlayer = players.LocalPlayer
+local MinimumHorizontalAim = 1e-4
 local ClientRoastChickenFarmManager = {}
 ClientRoastChickenFarmManager.__index = ClientRoastChickenFarmManager
 export type ClientRoastChickenFarmManager = typeof(setmetatable(
-	{} :: { hud: RoastChickenHUDFrame.RoastChickenHUDFrame?, speciesUI: SpeciesManager.ClientFarmSpeciesManager?, scope: LifecycleTool.Lifecycle?, initialized: boolean },
+	{} :: {
+		hud: RoastChickenHUDFrame.RoastChickenHUDFrame?,
+		speciesUI: SpeciesManager.ClientFarmSpeciesManager?,
+		vfx: VisualEffects.VfxManager?,
+		scope: LifecycleTool.Lifecycle?,
+		initialized: boolean,
+	},
 	ClientRoastChickenFarmManager
 ))
 
@@ -44,6 +55,28 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	local speciesUI = SpeciesManager.new()
 	self.speciesUI = speciesUI
 	speciesUI:Init(screenGui)
+
+	local vfx = VisualEffects.new()
+	self.vfx = vfx
+	vfx:Init()
+
+	-- 监听服务端广播的高品质视觉事件 (电击弹道/熟食飞入鸡筐/交货丰收抛跃)
+	local function OnVisual(event: NetMsg.VisualEvent): ()
+		if event.kind == "zap" then
+			local from = if event.fromPos then Vector3.new(event.fromPos.x, event.fromPos.y, event.fromPos.z) else Vector3.zero
+			local targets = event.targets or {}
+			vfx:PlayZapEffects(event.tier or 1, from, targets)
+		elseif event.kind == "pickup" then
+			local from = if event.fromPos then Vector3.new(event.fromPos.x, event.fromPos.y, event.fromPos.z) else Vector3.zero
+			vfx:PlayOriginalRoastIntoBasket(from, event.speciesId or "chicken", event.qualityId or "normal", event.weightKg or 1)
+		elseif event.kind == "deliver" then
+			local from = if event.fromPos then Vector3.new(event.fromPos.x, event.fromPos.y, event.fromPos.z) else Vector3.zero
+			local to = if event.toPos then Vector3.new(event.toPos.x, event.toPos.y, event.toPos.z) else from
+			vfx:PlayDeliveryFlying(from, to, event.speciesId or "chicken", event.qualityId or "normal")
+		end
+	end
+	scope:Connect(NetMsg.ConnectNotifyFarmVisual(OnVisual))
+
 	local function OnShop(): ()
 		FarmSoundTool.Play("UIClick")
 		speciesUI:Open("ToolShop")
@@ -71,15 +104,15 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 		if kind == "sale" then
 			FarmSoundTool.Play("Coin")
 			hud:ShowSaleNotice(message)
+		elseif kind == "capacity" then
+			FarmSoundTool.Play("Warning")
+			hud:ShowCapacityDenied(message)
 		else
-			if string.find(message, "拾取") or string.find(message, "Collected") then
-				FarmSoundTool.Play("Pickup")
-			elseif string.find(message, "超重") or string.find(message, "不足") or string.find(message, "Capacity") or string.find(message, "ItemTooHeavy") then
+			-- 成功拾取音效由飞行落袋播放；电击命中音由本地电弧播放，避免反馈文案再播一次
+			if string.find(message, "超重") or string.find(message, "不足") or string.find(message, "Capacity") or string.find(message, "ItemTooHeavy") then
 				FarmSoundTool.Play("Warning")
 			elseif string.find(message, "熟食") or string.find(message, "Cooked") then
 				FarmSoundTool.Play("AnimalCooked")
-			elseif string.find(message, "命中") or string.find(message, "Damage") then
-				FarmSoundTool.Play("AnimalHit")
 			end
 			hud:ShowMessage(message)
 		end
@@ -89,7 +122,7 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	local lastZapAt = 0
 	local function TriggerZapDirect(): ()
 		local now = os.clock()
-		if now - lastZapAt < 0.15 then return end
+		if now - lastZapAt < Economy.ZapCooldownSeconds then return end
 		lastZapAt = now
 		self:TriggerAction("zap")
 	end
@@ -200,15 +233,85 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	scope:Connect(UserInputService.InputBegan:Connect(OnInputBegan))
 end
 
+local function CollectLiveAnimalCandidates(): { CombatRules.Candidate }
+	local candidates: { CombatRules.Candidate } = {}
+	local plotId = localPlayer:GetAttribute("FarmPlotId")
+	if typeof(plotId) ~= "string" then
+		return candidates
+	end
+	local personalFarms = workspace:FindFirstChild("PersonalFarms")
+	local farmPlot = if personalFarms then personalFarms:FindFirstChild(plotId) else nil
+	local liveFolder = if farmPlot then farmPlot:FindFirstChild("LiveAnimals") else nil
+	if not liveFolder then
+		return candidates
+	end
+	for _, child in liveFolder:GetChildren() do
+		if child:IsA("Model") then
+			local id = child:GetAttribute("EntityId")
+			local health = child:GetAttribute("Health")
+			local primary = child.PrimaryPart
+			if typeof(id) == "string" and typeof(health) == "number" and health > 0 and primary then
+				local position = primary.Position
+				table.insert(candidates, { id = id, x = position.X, y = position.Y, z = position.Z, health = health })
+			end
+		end
+	end
+	return candidates
+end
+
 function ClientRoastChickenFarmManager.TriggerAction(self: ClientRoastChickenFarmManager, action: FarmConfig.FarmAction): boolean
 	if self.initialized and ClientGameInfo.GetFarmInfo().ready == true and not UIManager.HasShowingWindow() and not UserInputService:GetFocusedTextBox() and not GuiService.MenuIsOpen then
 		if action == "zap" then
-			local tier = ClientGameInfo.GetFarmInfo().zap or 1
-			FarmSoundTool.Play("Zap_T" .. tostring(math.clamp(tier, 1, 5)))
-			NetMsg.FireRequestFarmAction("zap")
+			local camera = Workspace.CurrentCamera
+			local look = if camera then camera.CFrame.LookVector else nil
+			local flat = if look then Vector3.new(look.X, 0, look.Z) else nil
+			if not flat or flat.Magnitude < MinimumHorizontalAim then
+				return false
+			end
+			local aim = flat.Unit
+			local info = ClientGameInfo.GetFarmInfo()
+			local tier = math.clamp(info.zap or 1, 1, #Economy.Weapons)
+			local level = math.clamp(info.weaponLevel or 1, 1, Economy.MaximumWeaponLevel)
+			local character = localPlayer.Character
+			local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+			if not root or not root:IsA("BasePart") then
+				return false
+			end
+			local candidates = CollectLiveAnimalCandidates()
+			local hits = CombatRules.ResolveShot(tier, level, root.Position.X, root.Position.Y, root.Position.Z, aim.X, aim.Z, candidates)
+			local byId: { [string]: CombatRules.Candidate } = {}
+			for _, candidate in candidates do
+				byId[candidate.id] = candidate
+			end
+			local targetIds: { string } = {}
+			local visualTargets: { { x: number, y: number, z: number, damage: number, isCooked: boolean, id: string } } = {}
+			for _, hit in hits do
+				local candidate = byId[hit.id]
+				if candidate then
+					table.insert(targetIds, hit.id)
+					table.insert(visualTargets, {
+						x = candidate.x,
+						y = candidate.y,
+						z = candidate.z,
+						damage = hit.damage,
+						isCooked = candidate.health <= hit.damage,
+						id = hit.id,
+					})
+				end
+			end
+			FarmSoundTool.Play("Zap_T" .. tostring(tier))
+			if self.vfx then
+				if #visualTargets == 0 then
+					self.vfx:PlayZapMiss(tier, aim)
+				else
+					self.vfx:PlayZapEffects(tier, root.Position, visualTargets)
+				end
+			end
+			NetMsg.FireRequestFarmCommand({ action = "zap", aim = { x = aim.X, y = 0, z = aim.Z }, targetIds = targetIds })
 		else
-			if action == "collect" then
-				FarmSoundTool.Play("UIClick")
+			-- 拾取音效在原熟食弹入背篓结束时播放，避免前置 UIClick 割裂
+			if action == "collect" and self.vfx then
+				self.vfx:ReserveNearbyRoasts()
 			end
 			NetMsg.FireRequestFarmAction(action)
 		end
@@ -225,6 +328,10 @@ function ClientRoastChickenFarmManager.Destroy(self: ClientRoastChickenFarmManag
 	contextActionService:UnbindAction("Farm_zap")
 	contextActionService:UnbindAction("Farm_collect")
 	contextActionService:UnbindAction("Farm_hatch")
+	if self.vfx then
+		self.vfx:Destroy()
+		self.vfx = nil
+	end
 	if self.scope then
 		self.scope:Destroy()
 		self.scope = nil
