@@ -7,6 +7,8 @@
 """
 
 import json
+import argparse
+import hashlib
 import os
 import sys
 import time
@@ -34,8 +36,8 @@ def load_manifest() -> dict:
     if MANIFEST_PATH.exists():
         try:
             return json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except (ValueError, OSError) as error:
+            raise RuntimeError("音效清单读取失败，停止上传以保留现有映射") from error
     return {
         "kind": "chicken_farm_audio_manifest",
         "groupId": GROUP_ID,
@@ -45,7 +47,9 @@ def load_manifest() -> dict:
 
 def save_manifest(manifest: dict):
     manifest["updatedAt"] = datetime.now(timezone.utc).isoformat()
-    MANIFEST_PATH.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    temporary = MANIFEST_PATH.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temporary.replace(MANIFEST_PATH)
 
 def upload_single_audio(session: requests.Session, api_key: str, sound_name: str, file_path: Path) -> str:
     """上传单份音频文件并轮询 operation，返回 assetId"""
@@ -84,7 +88,10 @@ def upload_single_audio(session: requests.Session, api_key: str, sound_name: str
     if not path:
         raise RuntimeError(f"响应缺少 path 字段: {data}")
 
-    op_url = f"{API_BASE}/assets/v1/{path.lstrip('/')}"
+    op_path = path.lstrip("/")
+    if not op_path.startswith("assets/v1/"):
+        op_path = "assets/v1/" + op_path
+    op_url = f"{API_BASE}/{op_path}"
     # 轮询等待完成
     deadline = time.monotonic() + 60
     interval = 1.0
@@ -118,8 +125,11 @@ ALL_SOUNDS = [
 ]
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--names", nargs="+", choices=ALL_SOUNDS, default=ALL_SOUNDS)
+    args = parser.parse_args()
     print("=" * 60)
-    print("正在通过 Roblox Open Cloud 自动上传烤鸡农场全部音效...")
+    print("正在通过 Roblox Open Cloud 上传指定音效...")
     print(f"目标群组: Group {GROUP_ID}")
     print("=" * 60)
 
@@ -130,31 +140,45 @@ def main():
     success_count = 0
     fail_count = 0
 
-    for idx, name in enumerate(ALL_SOUNDS, start=1):
+    processing_path = SOUNDS_DIR / "combat_processing.json"
+    processing = json.loads(processing_path.read_text(encoding="utf-8"))["sounds"] if processing_path.exists() else {}
+    for idx, name in enumerate(args.names, start=1):
         file_path = SOUNDS_DIR / f"{name}.mp3"
         if not file_path.exists():
-            print(f"[{idx}/{len(ALL_SOUNDS)}] [SKIP] 文件不存在: {file_path.name}")
+            print(f"[{idx}/{len(args.names)}] [SKIP] 文件不存在: {file_path.name}")
             fail_count += 1
             continue
 
         existing = manifest["sounds"].get(name)
-        if existing and existing.get("assetId"):
-            print(f"[{idx}/{len(ALL_SOUNDS)}] [EXISTS] {name} -> rbxassetid://{existing['assetId']}")
+        content_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+        # 旧清单无哈希时，以原素材哈希迁移；其他未知来源的资产保守复用。
+        baseline_hash = (existing or {}).get("sha256") or processing.get(name, {}).get("sourceSha256")
+        if existing and existing.get("assetId") and (baseline_hash is None or baseline_hash == content_hash):
+            existing["sha256"] = content_hash
+            print(f"[{idx}/{len(args.names)}] [EXISTS] {name} -> rbxassetid://{existing['assetId']}")
             success_count += 1
             continue
 
-        print(f"[{idx}/{len(ALL_SOUNDS)}] [UPLOADING] {name} ({file_path.stat().st_size} 字节)...", end=" ", flush=True)
+        print(f"[{idx}/{len(args.names)}] [UPLOADING] {name} ({file_path.stat().st_size} 字节)...", end=" ", flush=True)
         try:
             asset_id = upload_single_audio(session, api_key, name, file_path)
             rbx_id = f"rbxassetid://{asset_id}"
             print(f"OK -> {rbx_id}")
+            history = list((existing or {}).get("history", []))
+            if existing:
+                previous = {key: value for key, value in existing.items() if key != "history"}
+                if baseline_hash:
+                    previous["sha256"] = baseline_hash
+                history.append(previous)
             manifest["sounds"][name] = {
                 "name": name,
                 "assetId": asset_id,
                 "rbxassetid": rbx_id,
                 "file": file_path.name,
                 "fileSize": file_path.stat().st_size,
-                "uploadedAt": datetime.now(timezone.utc).isoformat()
+                "uploadedAt": datetime.now(timezone.utc).isoformat(),
+                "sha256": content_hash,
+                "history": history,
             }
             save_manifest(manifest)
             success_count += 1
@@ -166,9 +190,10 @@ def main():
 
     save_manifest(manifest)
     print("=" * 60)
-    print(f"上传流程结束：成功 {success_count}/{len(ALL_SOUNDS)}，失败 {fail_count}")
+    print(f"上传流程结束：成功 {success_count}/{len(args.names)}，失败 {fail_count}")
     print(f"资产清单已保存: {MANIFEST_PATH}")
     print("=" * 60)
+    return 1 if fail_count else 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

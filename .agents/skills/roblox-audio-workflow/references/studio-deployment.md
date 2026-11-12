@@ -1,157 +1,26 @@
-# Studio 实例树部署与 MCP 挂载指南 (Studio Deployment)
+# Studio 模板部署与源码同步验收
 
-本参考文档规定通过 Roblox Studio MCP 在处于 **Edit 模式** 的 Studio 会话中，将已上传的云端音频自动化部署为标准实例树的执行流程与规范。
+## 指定目标与模式
 
----
+先发现已连接会话，按 Place、名称、归属或用户提供的目标选择正确场景，所有读写携带会话 ID。实例修改只在 Edit 模式进行；部署代码应拒绝运行态和归属不符的场景。优先使用当前可用的 Studio MCP，不绑定某台机器的 fast_connect 绝对路径。
 
-## 1. 实例挂载结构红线
+## 模板唯一来源与更新
 
-Roblox 游戏架构中，声音实例的摆放位置直接决定客户端与服务端的寻址统一性以及多端资源预载。
+- SFX 模板位于 `ReplicatedStorage.Sounds`，BGM 位于 `SoundService.BGM`。运行时克隆或复用模板，不在模板位置直接播放。
+- 接收明确的音效名称列表；先校验整批的 ID、目录类型和同名对象类型，再进行更新，避免中途发生部分部署。
+- 替换素材只更新指定模板的 SoundId 及本次明确要求的属性。保留既有 Volume、RollOffMode、距离范围、SoundGroup 等调音；默认调音只用于新建模板。
+- 需要保持原音色的裁切成品按约定原速播放。不要借更新一个 ID 重置全套模板，也不移动或重建未涉及的 BGM。
+- 已上传成品与本地哈希不符时停止部署旧映射。保留原映射；需要恢复时可将指定模板指回原资产。
 
-```text
-game
-├── ReplicatedStorage
-│   └── Sounds (Folder)                <-- 唯一音效模板源 (Single Source of Truth)
-│       ├── UIClick (Sound)            Looped=false, Volume=0.5
-│       ├── Coin (Sound)               Looped=false, Volume=0.6
-│       ├── Zap_T1 (Sound)             Looped=false, Volume=0.7
-│       ├── AnimalHit (Sound)          Looped=false, Volume=0.8
-│       └── ... (全量 SFX 模板)
-└── SoundService
-    └── BGM (Sound)                    <-- 唯独背景音乐放置于此处 (Looped=true, Volume=0.4)
-```
+部署后只读比对清单和模板的 ID、PlaybackSpeed、Looped，并确认未选中模板及调音未被意外改动。检查预期数量应来自实际清单，不能固定为 22 个 SFX。
 
-> [!IMPORTANT]
-> **摆放规则**：
-> 1. **除 BGM 实例外，其余所有 SFX 音效必须且只能全部放置在 `ReplicatedStorage.Sounds`（Folder）中**。
-> 2. `ReplicatedStorage` 中的 `Sound` 实例仅作为**模板 (Template)** 存在，运行期不直接在此处调用 `:Play()`，而是通过对象池克隆/复用播放。
-> 3. **唯独 BGM 放置于 `SoundService.BGM`**（或挂在 `SoundGroups.BGM` 下），作为常驻背景循环音乐。
+## Script Sync 与草稿
 
----
+本地脚本修改继续走项目既有 Script Sync，不使用 MCP 写 Source 或提交草稿。
 
-## 2. 自动化部署脚本实现 (通过 StudioMCP)
+- 团队创建场景中，`LuaSourceContainer.Source` 可能仍是已提交版本，不能仅凭它与本地不一致就认定同步中断。
+- 在有权限的 Edit 插件上下文中，可只读使用 `ScriptEditorService:GetEditorSource(script)` 核对当前编辑草稿；全文比较时只规范化换行差异。
+- 草稿与本地一致说明编辑内容已同步，不代表草稿已提交、游戏已发布或已运行验证。
+- 只有当前编辑内容也未同步时，才检查现有同步连接；不要通过 MCP 直接覆写脚本规避同步问题。
 
-使用 Python 桥接 `fast_connect`，在 Studio 打开工程的 Edit 模式下，直接注入幂等性 Luau 初始化代码。
-
-### 2.1 部署代码核心逻辑
-
-```python
-import json
-import sys
-from pathlib import Path
-
-# 引入 StudioMCP fast_connect 客户端
-sys.path.append(r"C:\Users\herong\.gemini\config\skills\roblox-studio-mcp\scripts")
-from fast_connect import RobloxMCPClient
-
-def deploy_sounds_to_studio(manifest_path: Path):
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    sounds = manifest.get("sounds", {})
-    
-    client = RobloxMCPClient()
-    studios = client.list_studios()
-    if not studios:
-        raise RuntimeError("未检测到打开的 Roblox Studio 会话")
-    sid = studios[0]["id"]
-    
-    sounds_payload = json.dumps(sounds, ensure_ascii=False)
-    
-    # 构造 Edit 模式下执行的 Luau 部署脚本
-    luau_code = f"""
-local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local SoundService = game:GetService("SoundService")
-
-local rawData = [===[{sounds_payload}]===]
-local sounds = HttpService:JSONDecode(rawData)
-
--- 1. 确保 ReplicatedStorage.Sounds (Folder) 存在
-local soundsFolder = ReplicatedStorage:FindFirstChild("Sounds")
-if not soundsFolder then
-    soundsFolder = Instance.new("Folder")
-    soundsFolder.Name = "Sounds"
-    soundsFolder.Parent = ReplicatedStorage
-end
-
-local createdSFX = 0
-local createdBGM = 0
-
--- 2. 遍历清单并部署
-for soundName, data in pairs(sounds) do
-    if soundName == "BGM" or data.category == "BGM" then
-        -- 部署 BGM 到 SoundService
-        local bgm = SoundService:FindFirstChild("BGM")
-        if not bgm or not bgm:IsA("Sound") then
-            if bgm then bgm:Destroy() end
-            bgm = Instance.new("Sound")
-            bgm.Name = "BGM"
-            bgm.Parent = SoundService
-        end
-        bgm.SoundId = data.soundId
-        bgm.Volume = data.defaultVolume or 0.4
-        bgm.Looped = true
-        createdBGM = createdBGM + 1
-    else
-        -- 部署 SFX 到 ReplicatedStorage.Sounds
-        local sound = soundsFolder:FindFirstChild(soundName)
-        if not sound or not sound:IsA("Sound") then
-            if sound then sound:Destroy() end
-            sound = Instance.new("Sound")
-            sound.Name = soundName
-            sound.Parent = soundsFolder
-        end
-        sound.SoundId = data.soundId
-        sound.Volume = data.defaultVolume or 0.6
-        sound.Looped = false
-        sound.RollOffMode = Enum.RollOffMode.InverseTapered
-        sound.RollOffMinDistance = 10
-        sound.RollOffMaxDistance = 100
-        createdSFX = createdSFX + 1
-    end
-end
-
-return HttpService:JSONEncode({{
-    success = true,
-    createdSFX = createdSFX,
-    createdBGM = createdBGM,
-    soundsFolder = soundsFolder:GetFullName()
-}})
-"""
-    # 注意：execute_luau 参数依次为 (code, datamodel_type, studio_id)
-    res = client.execute_luau(luau_code, "Edit", sid)
-    print("Studio 部署响应:", res)
-    client.close()
-```
-
----
-
-## 3. 部署后只读校验与验收
-
-部署执行完毕后，执行只读探针确认实例存在且数量完全吻合：
-
-```python
-code = """
-local rep = game:GetService("ReplicatedStorage")
-local ss = game:GetService("SoundService")
-
-local folder = rep:FindFirstChild("Sounds")
-local count = 0
-if folder then
-    for _, child in ipairs(folder:GetChildren()) do
-        if child:IsA("Sound") then count = count + 1 end
-    end
-end
-
-local bgm = ss:FindFirstChild("BGM")
-return {
-    soundsFolderExists = folder ~= nil,
-    sfxCount = count,
-    bgmExists = (bgm ~= nil and bgm.SoundId ~= "")
-}
-"""
-```
-
-验收标准：
-- `soundsFolderExists == True`；
-- `sfxCount` 严格等于清单中的 SFX 总数（如 22）；
-- `bgmExists == True`。
+实例模板部署、Script Sync、草稿提交、Package 发布和游戏发布是不同动作。仅执行已授权范围，不以“验证”为由自动提交或发布。Edit 中不 require 业务模块来代替 Play 验证。

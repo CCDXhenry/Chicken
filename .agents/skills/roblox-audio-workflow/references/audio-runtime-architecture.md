@@ -80,6 +80,7 @@ end
 ### 3.2 Sound 实例克隆与自动归还池
 按模板索引对象池字典：`soundsPools: { [Sound]: { Sound } }`。
 - 获取时优先从池中出栈，池空时才 `:Clone()`；
+- 每次取出恢复模板音量、播放速度、TimePosition，并在 Play 前设置本次的循环和声音组；倍率不得残留到下一次播放。
 - 绑定 `Ended` 与 `Stopped` 事件：播放结束或主动停止时，自动清空 `Parent` 并归还对象池；
 - 模板被销毁时：自动清理池中全部克隆实例，防止悬挂引用。
 
@@ -119,6 +120,9 @@ local function GetSoundFromPool(soundTemplate: Sound): Sound?
 
 	local recycled = table.remove(pool)
 	if recycled then
+		recycled.Volume = soundTemplate.Volume
+		recycled.PlaybackSpeed = soundTemplate.PlaybackSpeed
+		recycled.TimePosition = 0
 		return recycled
 	end
 
@@ -157,8 +161,8 @@ function FarmSoundTool.Play(soundName: string, soundPosition: Vector3?, volumeMu
 		sound = FarmSoundTool.PlayGlobal(template, false)
 	end
 
-	if sound and volumeMultiplier then
-		sound.Volume = template.Volume * volumeMultiplier
+	if sound then
+		sound.Volume = template.Volume * (if volumeMultiplier ~= nil then volumeMultiplier else 1)
 	end
 
 	return sound
@@ -166,6 +170,10 @@ end
 ```
 
 ### 4.2 典型业务场景接入点
+
+以下片段只演示播放接口，不是完整的业务触发实现：开火须先通过装备、冷却、存活和输入校验；成功音须依赖对应成功事件或状态变化。不要仅凭文案关键词、pending 标志或金币减少推断成功。预测、权威通知和动画各层之间为同一结果指定一个声音入口，具体核对项见 SKILL.md 的校准 reference。
+
+声音先配置再 Play。需要音量倍率时应在底层开始播放之前应用；若现有接口先 Play 再设置音量，应记录该限制并在确有可听问题时做兼容修正，不借文档维护扩大代码修改。
 
 #### 1. UI 弹窗生命周期与按钮点击
 ```luau

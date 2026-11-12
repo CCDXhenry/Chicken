@@ -19,6 +19,7 @@ local AttackDuration = 0.12
 local SparkDuration = 0.12
 local PickupHoldSeconds = 0.45
 local PickupFadeSeconds = 0.15
+local PickupSoundMergeSeconds = 0.08
 local PickupLabelScale = 1.05
 local PickupLowerRise = 1.35
 local PickupUpperRise = 2.85
@@ -125,6 +126,7 @@ export type VfxManager = typeof(setmetatable(
 		pickupAnchorGeneration: number,
 		pickupFallback: BasePart?,
 		pickupFallbackPos: Vector3,
+		nextPickupSoundAt: number,
 		shakeIntensity: number,
 		shakeRemaining: number,
 		originalFov: number,
@@ -229,6 +231,7 @@ function FarmVisualEffects.new(): VfxManager
 		pickupAnchorGeneration = 0,
 		pickupFallback = nil,
 		pickupFallbackPos = Vector3.zero,
+		nextPickupSoundAt = -math.huge,
 		shakeIntensity = 0,
 		shakeRemaining = 0,
 		originalFov = 70,
@@ -422,6 +425,7 @@ function FarmVisualEffects.Init(self: VfxManager): ()
 		return
 	end
 	self.initialized = true
+	self.nextPickupSoundAt = -math.huge
 	self.scope = LifecycleTool.new()
 
 	self.camera = workspace.CurrentCamera
@@ -1177,7 +1181,11 @@ local function PlayPickupFeedback(self: VfxManager, pos: Vector3, speciesId: str
 	if not self.initialized then
 		return
 	end
-	FarmSoundTool.Play("Pickup")
+	local now = os.clock()
+	if now >= self.nextPickupSoundAt then
+		self.nextPickupSoundAt = now + PickupSoundMergeSeconds
+		FarmSoundTool.Play("Pickup")
+	end
 	EnqueuePickup(self, pos, speciesId, qualityId, weightKg)
 end
 

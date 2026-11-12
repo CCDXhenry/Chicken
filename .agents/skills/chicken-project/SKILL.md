@@ -24,6 +24,8 @@ description: Chicken Roblox 项目开发规范。处理本仓库代码、配置�
 - 用户明确提出优质实例需求（高品质 3D 模型/道具、专业 UI、精细特效 VFX）：[优质实例创建流程](../quality-instance-workflow/SKILL.md)。
 - 音频与音效需求（AI 生成、声学物理合成、Roblox Open Cloud 批量上云、ReplicatedStorage.Sounds 模板挂载或双重对象池业务接入）：读取 [音频资产全流程开发工作流](../roblox-audio-workflow/SKILL.md)。
 
+- Chicken 音效时长、触发修正、素材重生成与指定范围上传部署：另读 [音效维护与校准](references/audio-maintenance.md)，使用本项目参数与工具，不将其写成通用音频标准。
+
 只读取当前任务需要的 reference。各 reference 自包含，不继续链接其他 reference。
 
 ## 始终适用的工作方式

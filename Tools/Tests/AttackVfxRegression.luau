@@ -223,7 +223,8 @@ local env = {
 		end,
 	},
 	workspace = workspace,
-	task = task,
+	-- Studio 的无参 task.wait 等待一帧；Lune 默认为零，需模拟帧间隔。
+	task = setmetatable({ wait = function(seconds) return task.wait(seconds or 1 / 60) end }, { __index = task }),
 	Vector3 = Vector3,
 	CFrame = CFrame,
 	Color3 = Color3,
@@ -451,20 +452,24 @@ manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
 manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
 Check(ActiveLabelCount() == 1, "same species and quality occupy one row")
 Check(LabelWith("Chicken x3 (+3.0 kg)") ~= nil, "same food accumulates count and total weight")
-Check(#sounds - soundsBefore == 3, "each physical pickup still plays a sound")
+Check(#sounds - soundsBefore == 1, "simultaneous arrivals merge pickup sound without merging item feedback")
+task.wait(0.1)
+manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
+Check(#sounds - soundsBefore == 2, "arrival after 80 ms plays a new sound")
+Check(LabelWith("Chicken x4 (+4.0 kg)") ~= nil, "sound merging preserves all four item notices")
 Check(#manager.pickupPool == 2, "pickup rows have their own two-slot pool")
 table.remove(character.children, table.find(character.children, weapon))
 for _ = 1, 3 do
 	manager:UpdateAttacks(0.016)
 end
-local pickupSlot = LabelWith("Chicken x3 (+3.0 kg)")
+local pickupSlot = LabelWith("Chicken x4 (+4.0 kg)")
 Check(pickupSlot ~= nil and pickupSlot.gui.Enabled, "pickup remains visible across frames without an equipped gun")
 table.insert(character.children, weapon)
 for i = 1, 25 do
 	manager:SpawnFloatingText(Vector3.zero, "-" .. i)
 end
 manager:ClearAttacks()
-Check(LabelWith("Chicken x3 (+3.0 kg)") == pickupSlot and pickupSlot.gui.Enabled, "damage pool exhaustion and attack cleanup preserve pickup rows")
+Check(LabelWith("Chicken x4 (+4.0 kg)") == pickupSlot and pickupSlot.gui.Enabled, "damage pool exhaustion and attack cleanup preserve pickup rows")
 task.wait(0.7)
 Check(ActiveLabelCount() == 0, "merged pickup row retires after its hold")
 
@@ -494,6 +499,37 @@ manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "giant", 5)
 Check(#manager.pickupQueue == 1 and LabelWith("Chicken x1 (+5.0 kg)") == nil, "a fourth kind waits behind the two rows")
 player.CharacterRemoving:Fire(character)
 Check(ActiveLabelCount() == 0 and #manager.pickupQueue == 0, "character removal clears pickup rows and queue")
+-- 服务端确认成功后，真实飞行结束才响；没有筐口时走一次兜底。
+local function ReserveFlight()
+	local source = Node("Model", "SourceRoast")
+	local clone = Node("Model", "FlightRoast")
+	function clone:GetPivot() return CFrame.identity end
+	table.insert(manager.roastReserves, {
+		source = source, model = clone, position = Vector3.zero, expiresAt = os.clock() + 5,
+	})
+	return clone
+end
+task.wait(0.1)
+local flightClone = ReserveFlight()
+local beforeArrival = #sounds
+manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
+Check(#sounds == beforeArrival, "confirmed pickup waits for flight arrival before sounding")
+for _ = 1, 40 do
+	if flightClone.destroyed then break end
+	task.wait(0.05)
+end
+Check(#sounds == beforeArrival + 1 and flightClone.destroyed, "normal arrival sounds exactly once and destroys flight clone")
+manager:ClearPickupNotices()
+task.wait(0.1)
+flightClone = ReserveFlight()
+player.Character = nil
+beforeArrival = #sounds
+manager:PlayOriginalRoastIntoBasket(Vector3.zero, "chicken", "normal", 1)
+task.wait(0.1)
+Check(#sounds == beforeArrival + 1 and flightClone.destroyed, "missing character/basket anchor emits one confirmed-success fallback")
+task.wait(Config.PickupFlightDuration + 0.1)
+Check(#sounds == beforeArrival + 1, "fallback never emits a second arrival sound")
+player.Character = character
 manager:Destroy()
 Check(render:Count() == 0 and humanoid.Died:Count() == 0, "destroy disconnects frame and death updates")
 task.wait(0.75)

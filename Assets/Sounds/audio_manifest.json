@@ -1,87 +1,197 @@
 {
   "kind": "chicken_farm_audio_manifest",
   "groupId": "33977495",
-  "updatedAt": "2026-11-11T07:25:06.195641+00:00",
+  "updatedAt": "2026-11-12T09:01:22.084519+00:00",
   "sounds": {
     "Zap_T1": {
       "name": "Zap_T1",
-      "assetId": "117279309980671",
-      "rbxassetid": "rbxassetid://117279309980671",
+      "assetId": "99077183001121",
+      "rbxassetid": "rbxassetid://99077183001121",
       "file": "Zap_T1.mp3",
-      "fileSize": 97009,
-      "uploadedAt": "2026-11-11T07:23:50.296290+00:00"
+      "fileSize": 3805,
+      "uploadedAt": "2026-11-12T09:00:47.591410+00:00",
+      "sha256": "10c4ade5750f4c540077fc698e130ae69107476fced4d19e1d811313f97ee8ca",
+      "history": [
+        {
+          "name": "Zap_T1",
+          "assetId": "117279309980671",
+          "rbxassetid": "rbxassetid://117279309980671",
+          "file": "Zap_T1.mp3",
+          "fileSize": 97009,
+          "uploadedAt": "2026-11-11T07:23:50.296290+00:00"
+        }
+      ]
     },
     "Zap_T2": {
       "name": "Zap_T2",
-      "assetId": "94932772789051",
-      "rbxassetid": "rbxassetid://94932772789051",
+      "assetId": "117759825551488",
+      "rbxassetid": "rbxassetid://117759825551488",
       "file": "Zap_T2.mp3",
-      "fileSize": 19687,
-      "uploadedAt": "2026-11-11T07:23:52.596672+00:00"
+      "fileSize": 4223,
+      "uploadedAt": "2026-11-12T09:00:51.358334+00:00",
+      "sha256": "803d890b50d327f1dad44d4eed92558b17c0a1625f83afb3012fae45b18b7750",
+      "history": [
+        {
+          "name": "Zap_T2",
+          "assetId": "94932772789051",
+          "rbxassetid": "rbxassetid://94932772789051",
+          "file": "Zap_T2.mp3",
+          "fileSize": 19687,
+          "uploadedAt": "2026-11-11T07:23:52.596672+00:00"
+        }
+      ]
     },
     "Zap_T3": {
       "name": "Zap_T3",
-      "assetId": "138169065012356",
-      "rbxassetid": "rbxassetid://138169065012356",
+      "assetId": "100833356233744",
+      "rbxassetid": "rbxassetid://100833356233744",
       "file": "Zap_T3.mp3",
-      "fileSize": 64408,
-      "uploadedAt": "2026-11-11T07:23:56.417776+00:00"
+      "fileSize": 4641,
+      "uploadedAt": "2026-11-12T09:00:55.122539+00:00",
+      "sha256": "df77ada752c93f2f9113558de7ca2d2c265209c1d30bdb7f7fbbdbbf57a3fd7a",
+      "history": [
+        {
+          "name": "Zap_T3",
+          "assetId": "138169065012356",
+          "rbxassetid": "rbxassetid://138169065012356",
+          "file": "Zap_T3.mp3",
+          "fileSize": 64408,
+          "uploadedAt": "2026-11-11T07:23:56.417776+00:00"
+        }
+      ]
     },
     "Zap_T4": {
       "name": "Zap_T4",
-      "assetId": "120031364533284",
-      "rbxassetid": "rbxassetid://120031364533284",
+      "assetId": "113084429222581",
+      "rbxassetid": "rbxassetid://113084429222581",
       "file": "Zap_T4.mp3",
-      "fileSize": 65244,
-      "uploadedAt": "2026-11-11T07:24:00.215038+00:00"
+      "fileSize": 5059,
+      "uploadedAt": "2026-11-12T09:00:58.898032+00:00",
+      "sha256": "9d4995c03fed4b561005cfccaf4de2152b92d70e5a3a64a626f2419c5d8e0276",
+      "history": [
+        {
+          "name": "Zap_T4",
+          "assetId": "120031364533284",
+          "rbxassetid": "rbxassetid://120031364533284",
+          "file": "Zap_T4.mp3",
+          "fileSize": 65244,
+          "uploadedAt": "2026-11-11T07:24:00.215038+00:00"
+        }
+      ]
     },
     "Zap_T5": {
       "name": "Zap_T5",
-      "assetId": "77357440013942",
-      "rbxassetid": "rbxassetid://77357440013942",
+      "assetId": "128927099384773",
+      "rbxassetid": "rbxassetid://128927099384773",
       "file": "Zap_T5.mp3",
-      "fileSize": 10031,
-      "uploadedAt": "2026-11-11T07:24:02.532142+00:00"
+      "fileSize": 5895,
+      "uploadedAt": "2026-11-12T09:01:02.686437+00:00",
+      "sha256": "0e329f907b44adf0af5aa1c515db81679a29d7679f4ccd149e735151ff742e90",
+      "history": [
+        {
+          "name": "Zap_T5",
+          "assetId": "77357440013942",
+          "rbxassetid": "rbxassetid://77357440013942",
+          "file": "Zap_T5.mp3",
+          "fileSize": 10031,
+          "uploadedAt": "2026-11-11T07:24:02.532142+00:00"
+        }
+      ]
     },
     "AnimalHit": {
       "name": "AnimalHit",
-      "assetId": "140660687436222",
-      "rbxassetid": "rbxassetid://140660687436222",
+      "assetId": "128744420438827",
+      "rbxassetid": "rbxassetid://128744420438827",
       "file": "AnimalHit.mp3",
-      "fileSize": 4179,
-      "uploadedAt": "2026-11-11T07:24:04.823584+00:00"
+      "fileSize": 3387,
+      "uploadedAt": "2026-11-12T09:01:06.468739+00:00",
+      "sha256": "e6357c07394c6d6be9c8908aaae148d3f746c1fd803c935cd26bffd68b805277",
+      "history": [
+        {
+          "name": "AnimalHit",
+          "assetId": "140660687436222",
+          "rbxassetid": "rbxassetid://140660687436222",
+          "file": "AnimalHit.mp3",
+          "fileSize": 4179,
+          "uploadedAt": "2026-11-11T07:24:04.823584+00:00"
+        }
+      ]
     },
     "AnimalCooked": {
       "name": "AnimalCooked",
-      "assetId": "80593443386902",
-      "rbxassetid": "rbxassetid://80593443386902",
+      "assetId": "124414870696763",
+      "rbxassetid": "rbxassetid://124414870696763",
       "file": "AnimalCooked.mp3",
-      "fileSize": 9613,
-      "uploadedAt": "2026-11-11T07:24:08.517271+00:00"
+      "fileSize": 5895,
+      "uploadedAt": "2026-11-12T09:01:10.262120+00:00",
+      "sha256": "4494e689030323d4615498a867b0c0886ea2f326be11ff5448526aae4daee901",
+      "history": [
+        {
+          "name": "AnimalCooked",
+          "assetId": "80593443386902",
+          "rbxassetid": "rbxassetid://80593443386902",
+          "file": "AnimalCooked.mp3",
+          "fileSize": 9613,
+          "uploadedAt": "2026-11-11T07:24:08.517271+00:00"
+        }
+      ]
     },
     "FoodDrop": {
       "name": "FoodDrop",
-      "assetId": "122018158662276",
-      "rbxassetid": "rbxassetid://122018158662276",
+      "assetId": "78125699642557",
+      "rbxassetid": "rbxassetid://78125699642557",
       "file": "FoodDrop.mp3",
-      "fileSize": 3343,
-      "uploadedAt": "2026-11-11T07:24:12.214800+00:00"
+      "fileSize": 3387,
+      "uploadedAt": "2026-11-12T09:01:14.036121+00:00",
+      "sha256": "dbd5108439f8c33520058c575ba566cca2259c379316e2eef12c4dff0562ff9f",
+      "history": [
+        {
+          "name": "FoodDrop",
+          "assetId": "122018158662276",
+          "rbxassetid": "rbxassetid://122018158662276",
+          "file": "FoodDrop.mp3",
+          "fileSize": 3343,
+          "uploadedAt": "2026-11-11T07:24:12.214800+00:00"
+        }
+      ]
     },
     "Pickup": {
       "name": "Pickup",
-      "assetId": "116193245698481",
-      "rbxassetid": "rbxassetid://116193245698481",
+      "assetId": "87462600533451",
+      "rbxassetid": "rbxassetid://87462600533451",
       "file": "Pickup.mp3",
-      "fileSize": 4179,
-      "uploadedAt": "2026-11-11T07:24:14.548782+00:00"
+      "fileSize": 3805,
+      "uploadedAt": "2026-11-12T09:01:17.810137+00:00",
+      "sha256": "b7de2876fb42e4cc90ac93de92fc6a793fd692f1c018c1afb96b78e79a45f0d2",
+      "history": [
+        {
+          "name": "Pickup",
+          "assetId": "116193245698481",
+          "rbxassetid": "rbxassetid://116193245698481",
+          "file": "Pickup.mp3",
+          "fileSize": 4179,
+          "uploadedAt": "2026-11-11T07:24:14.548782+00:00"
+        }
+      ]
     },
     "Warning": {
       "name": "Warning",
-      "assetId": "139544431248523",
-      "rbxassetid": "rbxassetid://139544431248523",
+      "assetId": "110675694843850",
+      "rbxassetid": "rbxassetid://110675694843850",
       "file": "Warning.mp3",
-      "fileSize": 6269,
-      "uploadedAt": "2026-11-11T07:24:18.237103+00:00"
+      "fileSize": 5895,
+      "uploadedAt": "2026-11-12T09:01:21.583636+00:00",
+      "sha256": "375f78313a611e458500067309e872e58ca9a921f8d84f51b8a93a4d4c85df0c",
+      "history": [
+        {
+          "name": "Warning",
+          "assetId": "139544431248523",
+          "rbxassetid": "rbxassetid://139544431248523",
+          "file": "Warning.mp3",
+          "fileSize": 6269,
+          "uploadedAt": "2026-11-11T07:24:18.237103+00:00"
+        }
+      ]
     },
     "Delivery": {
       "name": "Delivery",

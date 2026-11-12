@@ -112,10 +112,8 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 			hud:ShowCapacityDenied(message)
 		else
 			-- 成功拾取音效由飞行落袋播放；电击命中音由本地电弧播放，避免反馈文案再播一次
-			if string.find(message, "超重") or string.find(message, "不足") or string.find(message, "Capacity") or string.find(message, "ItemTooHeavy") then
+			if string.find(message, "不足") then
 				FarmSoundTool.Play("Warning")
-			elseif string.find(message, "熟食") or string.find(message, "Cooked") then
-				FarmSoundTool.Play("AnimalCooked")
 			end
 			hud:ShowMessage(message)
 		end

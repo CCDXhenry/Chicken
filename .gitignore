@@ -30,6 +30,7 @@ sourcemap.json
 Thumbs.db
 /Assets/Studio/*test*.png
 /Assets/Studio/capture_*.png
+Roblox-chicken
 
 # Restore/build output inside the converter source tree.
 # SVN-managed converter runtime is excluded above with its external root.
