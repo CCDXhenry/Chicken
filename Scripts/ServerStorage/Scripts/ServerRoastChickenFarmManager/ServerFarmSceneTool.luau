@@ -60,54 +60,77 @@ end
 function ServerFarmSceneTool.SetHealthTone(part: BasePart, damaged: boolean): ()
 	part:SetAttribute("FarmHealthTone", if damaged then "damaged" else "healthy")
 end
+
+local BasketCarryOffset = CFrame.new(0, -0.45, 1)
+
+local function IsTemplateBasket(basket: Instance): boolean
+	return basket:IsA("Model") and basket:FindFirstChild("RootPart") ~= nil and basket:GetAttribute("BasketTier") == nil and basket:FindFirstChild("CharacterMotor", true) == nil
+end
+
+local function CloneCarriedBasket(root: BasePart): Model
+	local models = replicatedStorage:WaitForChild("Models")
+	local baskets = models:WaitForChild("Baskets")
+	local template = baskets:WaitForChild("FarmBasketTemplate")
+	assert(template:IsA("Model"), "缺少背篓预制：ReplicatedStorage.Models.Baskets.FarmBasketTemplate")
+	local model = template:Clone()
+	model.Name = "ChickenBasket"
+	local basketRoot = model.PrimaryPart
+	assert(basketRoot and basketRoot:IsA("BasePart"), "背篓预制缺少 RootPart")
+	model:PivotTo(root.CFrame * BasketCarryOffset)
+	local weld = Instance.new("WeldConstraint")
+	weld.Name = "CharacterWeld"
+	weld.Part0 = root
+	weld.Part1 = basketRoot
+	weld.Parent = basketRoot
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.Anchored = false
+			descendant.Massless = true
+			descendant.CanCollide = false
+			descendant.CanTouch = false
+			descendant.CanQuery = false
+		end
+	end
+	return model
+end
+
+function ServerFarmSceneTool.UpdateCarriedBasket(character: Model, root: BasePart, count: number): ()
+	local existing = character:FindFirstChild("ChickenBasket")
+	if count <= 0 then
+		if existing then
+			existing:Destroy()
+		end
+		return
+	end
+	local basket: Instance
+	if existing and IsTemplateBasket(existing) then
+		basket = existing
+	else
+		if existing then
+			existing:Destroy()
+		end
+		local model = CloneCarriedBasket(root)
+		model.Parent = character
+		basket = model
+	end
+	for index = 1, FarmConfig.BasketCapacity do
+		local roastPart = basket:FindFirstChild("Roast" .. index)
+		if roastPart and roastPart:IsA("BasePart") then
+			roastPart.Transparency = if index <= count then 0 else 1
+		end
+	end
+end
+
 function ServerFarmSceneTool.UpdateBasketVisual(self: FarmContext, player: Player, s: PlayerFarmState): ()
 	local character = player.Character
-	if not character then return end
+	if not character then
+		return
+	end
 	local root = character:FindFirstChild("HumanoidRootPart")
 	if not root or not root:IsA("BasePart") then
 		return
 	end
-
-	local model = character:FindFirstChild("ChickenBasket")
-	if not model and #s.items > 0 then
-		local basketModel = Instance.new("Model")
-		basketModel.Name = "ChickenBasket"
-		basketModel.Parent = character
-		model = basketModel
-
-		local function attach(name: string, size: Vector3, offset: Vector3, hex: string, ball: boolean?): Part
-			local p = ServerFarmSceneTool.CreatePiece(basketModel, name, size, root.CFrame * CFrame.new(offset), hex, ball)
-			p.Massless = true
-			p.Anchored = false
-			local weld = Instance.new("WeldConstraint")
-			weld.Part0 = root
-			weld.Part1 = p
-			weld.Parent = p
-			return p
-		end
-
-		attach("Basket", Vector3.new(1.85, 0.85, 1.05), Vector3.new(0, -0.1, 1), "B57436")
-		for _, y in { -0.36, -0.1, 0.16, 0.36 } do
-			attach("WovenBand", Vector3.new(1.92, 0.09, 1.1), Vector3.new(0, y, 1), "EDB568")
-		end
-		for i = 1, FarmConfig.BasketCapacity do
-			local xOffset = ((i - 1) % 3 - 1) * 0.55
-			local zOffset = 0.76 + math.floor((i - 1) / 3) * 0.45
-			attach("Roast" .. i, Vector3.new(0.55, 0.47, 0.5), Vector3.new(xOffset, 0.45, zOffset), "EF953B", true)
-		end
-	end
-
-	if model then
-		for i = 1, FarmConfig.BasketCapacity do
-			local roastPart = model:FindFirstChild("Roast" .. i) :: BasePart?
-			if roastPart then
-				roastPart.Transparency = if i <= #s.items then 0 else 1
-			end
-		end
-		if #s.items == 0 then
-			model:Destroy()
-		end
-	end
+	ServerFarmSceneTool.UpdateCarriedBasket(character, root, #s.items)
 end
 
 function ServerFarmSceneTool.CreateAnimalHealthLabel(self: FarmContext, model: Model): ()

@@ -258,11 +258,19 @@ local function UpdateInventory(session: Session, now: number, dt: number): ()
 		session.nextUnloadAt = nextUnloadAt
 		local deposited = false
 		while now >= nextUnloadAt and #session.farm.basket > 0 do
-			metrics.deliveredKg += session.farm.basket[1].weightKg
+			local cargo = session.farm.basket[1]
+			metrics.deliveredKg += cargo.weightKg
 			Business.DepositOne(session.farm)
 			metrics.delivered += 1
 			nextUnloadAt += Config.UnloadIntervalSeconds
 			deposited = true
+			NetMsg.FireNotifyFarmVisual(session.owner, {
+				kind = "deliver",
+				fromPos = { x = root.Position.X, y = root.Position.Y + 0.5, z = root.Position.Z },
+				toPos = { x = sell.Position.X, y = sell.Position.Y + 1.2, z = sell.Position.Z },
+				speciesId = cargo.speciesId,
+				qualityId = cargo.qualityId,
+			})
 		end
 		session.nextUnloadAt = nextUnloadAt
 		if deposited then
@@ -305,39 +313,52 @@ local function CookAnimal(session: Session, animal: Animal): ()
 		SetSign(primary, "CookedFoodSignGui", "", session.owner.UserId)
 	end
 end
-local function Zap(session: Session, root: BasePart, aim: Vector3?): ()
-	local candidates: { CombatRules.Candidate } = {}
-	for _, animal in session.animals do
-		table.insert(candidates, { id = animal.id, x = animal.pos.X, y = animal.pos.Y, z = animal.pos.Z, health = animal.health })
-	end
+local function Zap(session: Session, targetIds: { string }?): ()
 	local farm = session.farm
-	-- 范围攻击以玩家为中心：全向 360 度索敌
-	local hits = CombatRules.ResolveShot(
-		farm.equippedWeaponTier,
-		farm.weaponLevels[tostring(farm.equippedWeaponTier)],
-		root.Position.X,
-		root.Position.Y,
-		root.Position.Z,
-		nil,
-		nil,
-		candidates
-	)
-	if #hits == 0 then NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.AimHint.source); return end
-	local from = root.Position
+	local tier = farm.equippedWeaponTier
+	local level = farm.weaponLevels[tostring(tier)]
+	local weapon = Config.Weapons[tier]
+	if not weapon or not level then
+		return
+	end
+	local ordered: { CombatRules.OrderedTarget } = {}
+	local seen: { [string]: boolean } = {}
+	if targetIds then
+		for _, id in targetIds do
+			if not seen[id] then
+				seen[id] = true
+				local animal = session.animals[id]
+				if animal and animal.health > 0 then
+					table.insert(ordered, { id = animal.id, health = animal.health })
+					if #ordered >= weapon.maximumTargets then
+						break
+					end
+				end
+			end
+		end
+	end
+	local hits = CombatRules.ApplyOrderedHits(tier, level, ordered)
+	if #hits == 0 then
+		return
+	end
 	local total, cooked = 0, 0
 	for _, hit in hits do
 		local animal = session.animals[hit.id]
-		animal.health -= hit.damage
-		total += hit.damage
-		Scene.SpawnLightningArc(session, from, animal.pos + Vector3.yAxis)
-		if Config.Weapons[farm.equippedWeaponTier].mode == "chain" then from = animal.pos + Vector3.yAxis end
-		if animal.health == 0 then CookAnimal(session, animal); cooked += 1 else
-			animal.model:SetAttribute("Health", animal.health)
-			local species = Config.GetSpecies(animal.speciesId)
-			local primary = animal.model.PrimaryPart
-			if species and primary then
-				SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, animal.qualityId, NumberFormat.Number(animal.health), NumberFormat.Number(animal.maxHealth)), session.owner.UserId, "Public")
-				Scene.SetHealthTone(primary, true)
+		if animal then
+			animal.health -= hit.damage
+			total += hit.damage
+			local isCooked = animal.health <= 0
+			if isCooked then
+				CookAnimal(session, animal)
+				cooked += 1
+			else
+				animal.model:SetAttribute("Health", animal.health)
+				local species = Config.GetSpecies(animal.speciesId)
+				local primary = animal.model.PrimaryPart
+				if species and primary then
+					SetSign(primary, "AnimalHealthGui", Texts.Farm.PersonalHealth.source:format(species.name, animal.qualityId, NumberFormat.Number(animal.health), NumberFormat.Number(animal.maxHealth)), session.owner.UserId, "Public")
+					Scene.SetHealthTone(primary, true)
+				end
 			end
 		end
 	end
@@ -369,9 +390,11 @@ end
 local function RequestSpecies(session: Session, speciesId: string, now: number): ()
 	local species = Config.GetSpecies(speciesId)
 	if not species or speciesId == session.farm.selectedSpeciesId then return end
-	local prevSpecies = Config.Species[species.tier - 1]
-	local prevKey = (prevSpecies :: any).key or (prevSpecies :: any).speciesId or tostring(prevSpecies.id)
-	if species.tier > 1 and not session.farm.unlockedSpecies[prevKey] then return end
+	if species.tier > 1 then
+		local prevSpecies = Config.Species[species.tier - 1]
+		local prevKey = if prevSpecies then prevSpecies.key else nil
+		if not prevKey or not session.farm.unlockedSpecies[prevKey] then return end
+	end
 	local price = if session.farm.unlockedSpecies[speciesId] then 0 else species.unlockPrice
 	if session.farm.cash < price then NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.PersonalNeedCoins.source:format(NumberFormat.Number(price - session.farm.cash))); return end
 	local hasEntities = #session.eggs > 0 or next(session.animals) ~= nil
@@ -441,8 +464,18 @@ local function Collect(session: Session, root: BasePart): ()
 		local collected, reason = Business.TryCollect(session.farm, ground.cargo)
 		if collected then
 			session.ground[candidate.id] = nil
+			local pos = ground.pos
+			local cargo = ground.cargo
 			ground.model:Destroy()
 			count += 1
+			NetMsg.FireNotifyFarmVisual(session.owner, {
+				kind = "pickup",
+				fromPos = { x = pos.X, y = pos.Y, z = pos.Z },
+				toPos = { x = root.Position.X, y = root.Position.Y + 0.5, z = root.Position.Z },
+				speciesId = cargo.speciesId,
+				qualityId = cargo.qualityId,
+				weightKg = cargo.weightKg,
+			})
 			if count >= tool.maximumItems then break end
 		else
 			failure = reason
@@ -455,7 +488,8 @@ local function Collect(session: Session, root: BasePart): ()
 		Project(session)
 		NetMsg.FireNotifyFarmFeedback(session.owner, Texts.Farm.Collected.source:format(count))
 	else
-		NetMsg.FireNotifyFarmFeedback(session.owner, if remainingBlocked then Texts.Farm.RemainingCapacity.source elseif failure == "itemTooHeavy" then Texts.Farm.ItemTooHeavy.source else Texts.Farm.CollectHint.source)
+		local deniedByWeight = remainingBlocked or failure == "itemTooHeavy"
+		NetMsg.FireNotifyFarmFeedback(session.owner, if remainingBlocked then Texts.Farm.RemainingCapacity.source elseif failure == "itemTooHeavy" then Texts.Farm.ItemTooHeavy.source else Texts.Farm.CollectHint.source, if deniedByWeight then "capacity" else nil)
 	end
 end
 
@@ -524,6 +558,8 @@ function Manager.RemovePlayer(self: ServerPersonalFarmManager, player: Player): 
 		local character = player.Character
 		local basket = if character then character:FindFirstChild("ChickenBasket") else nil
 		if basket then basket:Destroy() end
+		local collector = if character then character:FindFirstChild("FarmCollector") else nil
+		if collector then collector:Destroy() end
 		local weapon = if character then character:FindFirstChild("FarmWeapon") else nil
 		if weapon then weapon:Destroy() end
 		local backpack = player:FindFirstChildOfClass("Backpack")
@@ -534,7 +570,7 @@ function Manager.RemovePlayer(self: ServerPersonalFarmManager, player: Player): 
 	end
 	if self.running then for waitingPlayer in self.waiting do self:OnPlayerLoaded(waitingPlayer) end end
 end
-function Manager.OnAction(self: ServerPersonalFarmManager, player: Player, action: string, aim: Vector3?, expectedStep: number?): ()
+function Manager.OnAction(self: ServerPersonalFarmManager, player: Player, action: string, _aim: Vector3?, expectedStep: number?, targetIds: { string }?): ()
 	local session = self.sessions[player]
 	if not session or session.frozen or not self.running or not ServerGameInfo.GetPlayerInfo(player) then return end
 	local now = os.clock()
@@ -561,7 +597,7 @@ function Manager.OnAction(self: ServerPersonalFarmManager, player: Player, actio
 	if not root then return end
 	if now < (session.cooldowns[action] or 0) then return end
 	session.cooldowns[action] = now + (if action == "zap" then Config.ZapCooldownSeconds else Config.CollectCooldownSeconds)
-	if action == "zap" then Zap(session, root, aim) else Collect(session, root) end
+	if action == "zap" then Zap(session, targetIds) else Collect(session, root) end
 end
 function Manager.OnCommand(self: ServerPersonalFarmManager, player: Player, command: FarmRequest.Request): ()
 	local session = self.sessions[player]
@@ -597,7 +633,7 @@ function Manager.OnCommand(self: ServerPersonalFarmManager, player: Player, comm
 		RequestInstantHatch(session, command.targetId, now)
 	else
 		local aim = command.aim
-		self:OnAction(player, command.action, if aim then Vector3.new(aim.x, aim.y, aim.z) else nil, command.expectedStep)
+		self:OnAction(player, command.action, if aim then Vector3.new(aim.x, aim.y, aim.z) else nil, command.expectedStep, command.targetIds)
 	end
 end
 function Manager.Update(self: ServerPersonalFarmManager, now: number, dt: number): ()

@@ -1,4 +1,4 @@
--- 个人农场表现层：投影玩家属性、克隆鸡筐和服务员模板并维护品质视觉与主人标牌
+-- 个人农场表现层：投影玩家属性、克隆武器、拾取工具、鸡筐和服务员模板并维护品质视觉与主人标牌
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
@@ -10,6 +10,8 @@ local Texts = require(Shared:WaitForChild("GameTexts"))
 local NumberFormat = require(Shared:WaitForChild("FarmNumberFormat"))
 local Scene = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerFarmSceneTool"))
 local WeaponBuilder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerWeaponBuilder"))
+local CollectorBuilder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerCollectorBuilder"))
+local BasketBuilder = require(script.Parent:WaitForChild("ServerRoastChickenFarmManager"):WaitForChild("ServerBasketBuilder"))
 local Types = require(script.Parent:WaitForChild("ServerPersonalFarmTypes"))
 type Session = Types.Session
 type Egg = Types.Egg
@@ -36,32 +38,71 @@ local function SetSign(part: BasePart, template: string, text: string, ownerId: 
 	Scene.BindSign(part, template, nil, audience or "Public")
 	Scene.SetSignText(part, text)
 end
+-- 拾取工具挂在角色右侧腰间，避免和强制装备的电击枪抢手。
+local CollectorHipOffset = CFrame.new(1.15, 0.35, 0.15) * CFrame.Angles(0, math.rad(-70), math.rad(18))
+-- 鸡筐挂在背后；正 Z 为角色后方。
+local BasketBackOffset = CFrame.new(0, -0.45, 1)
+
+local function FindKept(character: Model, name: string, attribute: string, tier: number): Model?
+	local kept: Model? = nil
+	for _, child in character:GetChildren() do
+		if child.Name == name then
+			if kept == nil and child:IsA("Model") and child:GetAttribute(attribute) == tier then
+				kept = child
+			else
+				child:Destroy()
+			end
+		end
+	end
+	return kept
+end
+
+local function MountWornModel(model: Model, character: Model, humanoidRoot: BasePart, offset: CFrame): ()
+	local anchor = model.PrimaryPart
+	assert(anchor and anchor:IsA("BasePart"), "穿戴模型缺少 PrimaryPart")
+	model:PivotTo(humanoidRoot.CFrame * offset)
+	local weld = Instance.new("WeldConstraint")
+	weld.Name = "CharacterWeld"
+	weld.Part0 = humanoidRoot
+	weld.Part1 = anchor
+	weld.Parent = anchor
+	for _, descendant in model:GetDescendants() do
+		if descendant:IsA("BasePart") then
+			descendant.Anchored = false
+			descendant.Massless = true
+			descendant.CanCollide = false
+			descendant.CanTouch = false
+			descendant.CanQuery = false
+		end
+	end
+	model.Parent = character
+end
+
+local function UpdateCollectorVisual(session: Session): ()
+	local character = session.owner.Character
+	local root = Scene.GetPlayerRoot(session.owner)
+	if not character or not root then return end
+	local tier = session.farm.collectTier
+	if FindKept(character, "FarmCollector", "CollectorTier", tier) then return end
+	local model = CollectorBuilder.BuildCollectorModel(tier)
+	MountWornModel(model, character, root, CollectorHipOffset)
+end
+
 local function UpdateBasketVisual(session: Session): ()
 	local character = session.owner.Character
 	local root = Scene.GetPlayerRoot(session.owner)
 	if not character or not root then return end
-	local count = #session.farm.basket
-	local basket = character:FindFirstChild("ChickenBasket")
-	if count == 0 then if basket then basket:Destroy() end; return end
-	if not basket then
-		local template = ServerStorage:WaitForChild("Models"):FindFirstChild("FarmBasketTemplate")
-		if not template or not template:IsA("Model") then return end
-		local clone = template:Clone()
-		local basketRoot = clone.PrimaryPart
-		if not basketRoot then clone:Destroy(); return end
-		clone.Name = "ChickenBasket"
-		clone:PivotTo(root.CFrame * CFrame.new(0, -0.45, 1.15))
-		for _, part in clone:GetDescendants() do if part:IsA("BasePart") then part.Anchored = false; part.Massless = true end end
-		local weld = Instance.new("WeldConstraint")
-		weld.Name, weld.Part0, weld.Part1, weld.Parent = "CharacterWeld", root, basketRoot, basketRoot
-		clone.Parent = character
-		basket = clone
+	local tier = session.farm.basketTier
+	local kept = FindKept(character, "ChickenBasket", "BasketTier", tier)
+	local weightKg = Business.GetWeight(session.farm)
+	local capacityKg = Config.Baskets[tier].capacityKg
+	if kept then
+		BasketBuilder.ApplyCargoFill(kept, weightKg, capacityKg)
+		return
 	end
-	if not basket then return end
-	for index = 1, 6 do
-		local roast = basket:FindFirstChild("Roast" .. index)
-		if roast and roast:IsA("BasePart") then roast.Transparency = if index <= count then 0 else 1 end
-	end
+	local model = BasketBuilder.BuildBasketModel(tier)
+	MountWornModel(model, character, root, BasketBackOffset)
+	BasketBuilder.ApplyCargoFill(model, weightKg, capacityKg)
 end
 local function UpdateWeaponVisual(session: Session): ()
 	local player, farm = session.owner, session.farm
@@ -168,6 +209,7 @@ local function UpdateRestaurantVisuals(session: Session, waiting: number, proces
 end
 local function Project(session: Session, egg: Egg?, now: number): ()
 	UpdateBasketVisual(session)
+	UpdateCollectorVisual(session)
 	UpdateWeaponVisual(session)
 	local player, farm = session.owner, session.farm
 	local waiting, processing, expected = Business.GetKitchenCounts(farm)
