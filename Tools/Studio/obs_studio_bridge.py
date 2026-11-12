@@ -1,7 +1,8 @@
+# OBS 与 Studio 媒体桥接：默认严格采集，校准失败传播错误，录像由持续守卫管理。
 """
 Roblox Studio & OBS Media Bridge
 统一多媒体桥接层，将 OBS 录像/截屏能力与 Roblox MCP 自动化测试深度融合。
-支持自动化测试录制上下文管理器 (RobloxRecordSession) 与多源截屏优雅降级机制。
+支持自动化测试录制上下文管理器；OBS 校准失败时直接报错。
 """
 
 import os
@@ -21,7 +22,7 @@ class RobloxRecordSession:
     使用示例:
     ```python
         with RobloxRecordSession("Chicken_Farm_Regression_Test") as session:
-            # 1. 启动 Play 模式
+            # 1. 调用前已进入 Play，完成校准并复核边界
             # 2. 模拟角色动作或烤鸡操作
             session.snapshot("Assets/Studio/regression_step1.png")
             # 3. 校验断言
@@ -43,21 +44,10 @@ class RobloxRecordSession:
         self.start_timestamp = 0.0
 
     def __enter__(self):
-        if not self.obs.is_connected():
-            print(f"[RecordSession] 警告: 未检测到 OBS WebSocket，跳过录像。")
-            return self
-
-        try:
-            self.obs.ensure_roblox_window_attached()
-            self.obs.start_record()
-            self.is_recording = True
-            self.start_timestamp = time.time()
-            # 插入首个标记点
-            self.obs.create_record_chapter(f"Start_{self.session_name}")
-            print(f"[RecordSession] 已开启 OBS 视频录制: 【{self.session_name}】")
-        except Exception as e:
-            print(f"[RecordSession] 启动录制失败: {e}")
-
+        self.obs.start_record(max_duration_sec=self.max_duration_sec)
+        self.is_recording = True
+        self.start_timestamp = time.monotonic()
+        self.obs.create_record_chapter(f'Start_{self.session_name}')
         return self
 
     def snapshot(self, save_path: str, chapter_mark: Optional[str] = None) -> Optional[str]:
@@ -65,10 +55,8 @@ class RobloxRecordSession:
         if chapter_mark and self.is_recording:
             self.obs.create_record_chapter(chapter_mark)
 
-        if self.obs.is_connected():
-            res = self.obs.take_screenshot(save_path=save_path)
-            return res.get("save_path")
-        return None
+        res = self.obs.take_screenshot(save_path=save_path)
+        return res.get("save_path")
 
     def mark_chapter(self, chapter_name: str):
         """插入章节标记，方便后续在播放器中按章节跳转"""
@@ -76,31 +64,23 @@ class RobloxRecordSession:
             self.obs.create_record_chapter(chapter_name)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if not self.is_recording:
-            return False
-
-        try:
-            # 等待 0.5s 确保尾帧写入
-            time.sleep(0.5)
-            self.video_output_path = self.obs.stop_record()
-            duration = time.time() - self.start_timestamp
-            self.is_recording = False
-
-            if exc_type is not None:
-                print(f"[RecordSession] 测试过程中出现异常 [{exc_type.__name__}: {exc_val}]！")
-                print(f"[RecordSession] 故障录像已完好留存用于排查分析: {self.video_output_path} (录制时长: {duration:.1f}s)")
-            else:
-                print(f"[RecordSession] 录像正常结束，视频文件已落地: {self.video_output_path} (时长: {duration:.1f}s)")
-        except Exception as e:
-            print(f"[RecordSession] 停止录像时发生异常: {e}")
-
-        return False  # 不吞没原有的业务异常
+        if self.is_recording:
+            try:
+                self.video_output_path = self.obs.stop_record()
+            except Exception:
+                self.video_output_path = self.obs._last_record_file
+                if exc_type is None:
+                    raise
+                logger.exception('录像无效；保留原测试异常')
+            finally:
+                self.is_recording = False
+        return False
 
 
 class RobloxMediaBridge:
     """
     Roblox Studio 多媒体统一门面：
-    支持 OBS 高保真截屏/录像与 Roblox 原生 MCP screen_capture 自由切换与自动降级。
+    默认使用已校准 OBS 场景；原生 MCP 截图须显式选择。
     """
 
     def __init__(self, mcp_client=None, obs_controller: Optional[OBSController] = None):
@@ -118,7 +98,7 @@ class RobloxMediaBridge:
         """
         截取 Studio 画面。
         :param save_path: 保存文件路径
-        :param prefer_obs: 优先使用 OBS 窗口截屏；若 OBS 不在线或指定了自定义镜头坐标，降级使用原生 MCP
+        :param prefer_obs: 默认使用已校准 OBS 场景；指定镜头或 prefer_obs=False 时显式使用原生 MCP
         :param camera_position: 原生 MCP 的临时镜头坐标 [x, y, z]
         :param look_at_position: 原生 MCP 的临时注视目标 [x, y, z]
         """
@@ -126,17 +106,10 @@ class RobloxMediaBridge:
         if camera_position is not None or look_at_position is not None or not prefer_obs:
             return self._capture_native_mcp(save_path, camera_position, look_at_position, studio_id)
 
-        # 尝试 OBS 截屏
-        if self.obs.is_connected():
-            try:
-                res = self.obs.take_screenshot(save_path=save_path)
-                res["provider"] = "OBS"
-                return res
-            except Exception as e:
-                logger.warning(f"OBS 截屏失败，尝试降级原生 MCP: {e}")
-
-        # 降级到原生 MCP
-        return self._capture_native_mcp(save_path, camera_position, look_at_position, studio_id)
+        # No automatic fallback: a failed calibrated capture is invalid evidence.
+        res = self.obs.take_screenshot(save_path=save_path)
+        res['provider'] = 'OBS'
+        return res
 
     def _capture_native_mcp(self, save_path, camera_position, look_at_position, studio_id):
         if not self.mcp_client:

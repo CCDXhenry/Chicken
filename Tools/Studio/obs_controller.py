@@ -1,6 +1,7 @@
+# OBS 本地控制器：认证连接、校准视口截图与持续守卫的录像生命周期。
 """
 OBS WebSocket v5 Controller for Roblox Studio
-通过本地 OBS WebSocket (端口 4455，无认证) 实现高保真视口截图、视频录制与窗口自动捕获。
+通过本地 OBS WebSocket（支持密码认证）实现严格校准的视口截图与录像。
 """
 
 import asyncio
@@ -10,27 +11,42 @@ import logging
 import os
 import sys
 import time
+import hashlib
+import io
+import threading
+from pathlib import Path
 from typing import Optional, Dict, Any, Tuple
 import websockets
+from PIL import Image, ImageStat
+from obs_viewport import CaptureInvalid, ViewportGuard, SCENE, SOURCE, utc_now, write_json
 
 logger = logging.getLogger("OBSController")
 
 DEFAULT_OBS_HOST = "127.0.0.1"
 DEFAULT_OBS_PORT = 4455
-DEFAULT_SCENE_NAME = "RobloxTest"
-DEFAULT_SOURCE_NAME = "RobloxStudio"
+DEFAULT_SCENE_NAME = SCENE
+DEFAULT_SOURCE_NAME = SCENE  # Public screenshots always use the final scene, not the raw window.
 MAX_RECORDING_DURATION_SEC = 300  # 单次录制最长 5 分钟安全熔断
 
 
 class OBSController:
     """OBS Studio WebSocket v5 控制器"""
 
-    def __init__(self, host: str = DEFAULT_OBS_HOST, port: int = DEFAULT_OBS_PORT, password: Optional[str] = None):
+    def __init__(self, host: str = DEFAULT_OBS_HOST, port: int = DEFAULT_OBS_PORT, password: Optional[str] = None, calibration_path=None):
         self.ws_url = f"ws://{host}:{port}"
-        self.password = password
+        self.password = password if password is not None else os.environ.get('OBS_WEBSOCKET_PASSWORD')
         self.req_id_counter = 0
         self._record_start_time: Optional[float] = None
         self._last_record_file: Optional[str] = None
+        self.guard = ViewportGuard(self, calibration_path)
+        self._guard_stop = threading.Event()
+        self._guard_thread = None
+        self._record_error = None
+        self._record_stats = None
+        self._owns_recording = False
+        self._expect_motion = False
+        self._record_samples = []
+        self._finalize_lock = threading.Lock()
 
     def _get_next_req_id(self) -> str:
         self.req_id_counter += 1
@@ -38,9 +54,9 @@ class OBSController:
 
     async def _send_request_async(self, request_type: str, request_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """通过 WebSocket 执行单次 OBS 请求"""
-        async with websockets.connect(self.ws_url, open_timeout=3.0, close_timeout=3.0) as ws:
+        async with websockets.connect(self.ws_url, open_timeout=3.0, close_timeout=3.0, max_size=64 * 1024 * 1024) as ws:
             # 1. 接收 Hello 消息 (OpCode 0)
-            hello_raw = await ws.recv()
+            hello_raw = await asyncio.wait_for(ws.recv(), timeout=5)
             hello = json.loads(hello_raw)
             if hello.get("op") != 0:
                 raise RuntimeError(f"Unexpected initial OpCode: {hello.get('op')}")
@@ -53,11 +69,17 @@ class OBSController:
                     "eventSubscriptions": 0
                 }
             }
-            # 如果有认证需求可在此补充鉴权，当前无密码
+            auth = hello.get('d', {}).get('authentication')
+            if auth:
+                if not self.password:
+                    raise RuntimeError('OBS 需要认证，请设置 OBS_WEBSOCKET_PASSWORD；密码不会写入校准记录。')
+                secret = base64.b64encode(hashlib.sha256((self.password + auth['salt']).encode()).digest()).decode()
+                identify_payload['d']['authentication'] = base64.b64encode(
+                    hashlib.sha256((secret + auth['challenge']).encode()).digest()).decode()
             await ws.send(json.dumps(identify_payload))
 
             # 3. 接收 Identified (OpCode 2)
-            identified_raw = await ws.recv()
+            identified_raw = await asyncio.wait_for(ws.recv(), timeout=5)
             identified = json.loads(identified_raw)
             if identified.get("op") != 2:
                 raise RuntimeError(f"Handshake failed: {identified}")
@@ -75,12 +97,14 @@ class OBSController:
             await ws.send(json.dumps(request_payload))
 
             # 5. 等待 RequestResponse (OpCode 7)
-            resp_raw = await ws.recv()
+            resp_raw = await asyncio.wait_for(ws.recv(), timeout=5)
             resp = json.loads(resp_raw)
             if resp.get("op") != 7:
                 raise RuntimeError(f"Unexpected response OpCode: {resp.get('op')}")
 
             d = resp.get("d", {})
+            if d.get('requestId') != req_id:
+                raise RuntimeError('OBS response requestId mismatch')
             status = d.get("requestStatus", {})
             if not status.get("result", False):
                 code = status.get("code")
@@ -150,32 +174,43 @@ class OBSController:
 
     def ensure_roblox_window_attached(self, source_name: str = DEFAULT_SOURCE_NAME) -> bool:
         """
-        检查并自适应更新 OBS 中 RobloxStudio 窗口采集源所绑定的窗口。
-        解决 Roblox Studio 重启或打开新工程后窗口句柄失效的问题。
+        兼容旧接口名称：只验证已校准窗口，不自动重绑。
         """
-        try:
-            current_settings = self.send_request("GetInputSettings", {"inputName": source_name})
-            settings = current_settings.get("inputSettings", {})
-            current_window = settings.get("window", "")
+        # Compatibility name retained; capture must never silently reattach a window.
+        self.guard.validate()
+        return True
 
-            active_window_title = self.find_active_roblox_window()
-            if not active_window_title:
-                return False
+    def _scene_image(self, sample=False):
+        args = {'sourceName': SCENE, 'imageFormat': 'png'}
+        if sample:
+            args['imageWidth'] = 256
+        result = self.send_request('GetSourceScreenshot', args)
+        return Image.open(io.BytesIO(base64.b64decode(result['imageData'].split(',', 1)[-1]))).convert('RGB')
 
-            # OBS window_capture 格式规范为: "窗口标题:窗口类名:进程名"
-            target_window_pattern = f"{active_window_title}:Qt5159QWindowIcon:RobloxStudioBeta.exe"
+    def _validate_image(self, image, data, sample=False):
+        if not sample and list(image.size) != data['layout']['viewport'][2:]:
+            raise CaptureInvalid('截图尺寸与已校准视口不符。')
+        stats = ImageStat.Stat(image.resize((64, 64)))
+        if max(stats.mean) < 2 or max(stats.stddev) < 0.5:
+            raise CaptureInvalid('捕获画面为黑屏或近乎纯色，不能作为有效证据。')
 
-            if current_window != target_window_pattern:
-                self.send_request("SetInputSettings", {
-                    "inputName": source_name,
-                    "inputSettings": {
-                        "window": target_window_pattern
-                    }
-                })
-            return True
-        except Exception as e:
-            logger.warning(f"Failed to auto-attach Roblox window: {e}")
-            return False
+    def calibration_preview(self, directory):
+        data = self.guard.validate(require_review=False)
+        directory = Path(directory).resolve()
+        directory.mkdir(parents=True, exist_ok=True)
+        image = self._scene_image()
+        self._validate_image(image, data)
+        image.save(directory / 'viewport.png')
+        self.send_request('SaveSourceScreenshot', dict(sourceName=SOURCE, imageFormat='png',
+                                                       imageFilePath=str(directory / 'window-reference.png')))
+        return {'viewport': str(directory / 'viewport.png'), 'reference': str(directory / 'window-reference.png')}
+
+    def approve_boundaries(self):
+        data = self.guard.validate(require_review=False)
+        self._validate_image(self._scene_image(), data)
+        data.update(status='approved', boundary_reviewed_at=utc_now())
+        write_json(self.guard.path, data)
+        return data
 
     def take_screenshot(
         self,
@@ -196,126 +231,142 @@ class OBSController:
         :param quality: 压缩质量 1-100，默认 -1
         :return: 包含 'image_data' (Base64) 与 'save_path' 的字典
         """
-        self.ensure_roblox_window_attached(source_name)
-
+        if source_name != SCENE or image_width or image_height:
+            raise CaptureInvalid('准确采集仅允许最终视口场景的原始分辨率截图。')
+        data = self.guard.validate()
+        image = self._scene_image()
+        try:
+            self._validate_image(image, data)
+        except CaptureInvalid as error:
+            self.guard.invalidate(error)
+            raise
+        self.guard.validate()  # Discard the image if layout changed while OBS rendered it.
+        captured_at = utc_now()
         if save_path:
-            abs_path = os.path.abspath(save_path)
-            os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-            req_data = {
-                "sourceName": source_name,
-                "imageFormat": image_format,
-                "imageFilePath": abs_path,
-                "imageQuality": quality
-            }
-            if image_width:
-                req_data["imageWidth"] = image_width
-            if image_height:
-                req_data["imageHeight"] = image_height
-
-            self.send_request("SaveSourceScreenshot", req_data)
-            return {
-                "success": True,
-                "save_path": abs_path,
-                "source_name": source_name,
-                "format": image_format
-            }
-        else:
-            req_data = {
-                "sourceName": source_name,
-                "imageFormat": image_format,
-                "imageQuality": quality
-            }
-            if image_width:
-                req_data["imageWidth"] = image_width
-            if image_height:
-                req_data["imageHeight"] = image_height
-
-            res = self.send_request("GetSourceScreenshot", req_data)
-            raw_base64 = res.get("imageData", "")
-            # 去除 data:image/png;base64, 前缀以便直接进行二进制操作
-            pure_base64 = raw_base64.split(",", 1)[-1] if "," in raw_base64 else raw_base64
-
-            return {
-                "success": True,
-                "image_data": pure_base64,
-                "data_uri": raw_base64,
-                "source_name": source_name,
-                "format": image_format
-            }
-
-    def start_record(self) -> bool:
-        """开始录制视频"""
-        status = self.get_record_status()
-        if status.get("outputActive", False):
-            # 已经在录制中
-            return True
-
-        self.ensure_roblox_window_attached()
-        self.send_request("StartRecord")
-        self._record_start_time = time.time()
+            path = Path(save_path).resolve()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            options = {} if image_format == 'png' or quality == -1 else {'quality': quality}
+            image.save(path, format='JPEG' if image_format == 'jpg' else image_format.upper(), **options)
+            result = dict(success=True, save_path=str(path), source_name=SCENE, format=image_format,
+                          dimensions=list(image.size), captured_at=captured_at, calibration=str(self.guard.path))
+            write_json(str(path) + '.json', result)
+            return result
+        buffer = io.BytesIO()
+        image.save(buffer, format='JPEG' if image_format == 'jpg' else image_format.upper())
+        encoded = base64.b64encode(buffer.getvalue()).decode()
+        return dict(success=True, image_data=encoded, data_uri=f'data:image/{image_format};base64,{encoded}',
+                    source_name=SCENE, format=image_format, dimensions=list(image.size), captured_at=captured_at)
+    def start_record(self, expect_motion=False, max_duration_sec=MAX_RECORDING_DURATION_SEC) -> bool:
+        """Start only a calibrated recording; a non-daemon watchdog remains alive until stop."""
+        if self.get_record_status().get('outputActive'):
+            raise CaptureInvalid('OBS 已有录像，不接管或停止其他录像。')
+        data = self.guard.validate()
+        self._validate_image(self._scene_image(), data)
+        self._record_calibration = data
+        self._record_stats = self.send_request('GetStats')
+        self._record_error = None
+        self._record_samples = []
+        self._expect_motion = expect_motion
+        self._max_duration = min(max_duration_sec, MAX_RECORDING_DURATION_SEC)
+        if self._max_duration <= 0:
+            raise ValueError('录像时长必须大于 0。')
+        self.send_request('StartRecord')
+        self._owns_recording = True
+        deadline = time.monotonic() + 15
+        while not self.get_record_status().get('outputActive'):
+            if time.monotonic() >= deadline:
+                self._record_error = 'OBS 启动录像超时，不能视为已开始采集。'
+                raise CaptureInvalid(self._record_error)
+            time.sleep(0.1)
+        self._record_start_time = time.monotonic()
+        self._guard_stop.clear()
+        self._guard_thread = threading.Thread(target=self._watch_record, name='OBSViewportGuard', daemon=False)
+        self._guard_thread.start()
         return True
 
-    def stop_record(self, wait_finished: bool = True, timeout_sec: float = 5.0) -> str:
-        """
-        停止录制并返回生成的视频文件绝对路径。
-        :param wait_finished: 是否等待 OBS 编码器完全写入文件并关闭句柄
-        :param timeout_sec: 最大等待超时时间 (秒)
-        """
-        status = self.get_record_status()
-        if not status.get("outputActive", False):
-            return self._last_record_file or ""
-
-        res = self.send_request("StopRecord")
-        output_path = res.get("outputPath", "")
-        self._last_record_file = output_path
-        self._record_start_time = None
-
-        if wait_finished:
-            # 1. 轮询直到 OBS 输出处于非激活状态
-            t_start = time.time()
-            while time.time() - t_start < timeout_sec:
-                cur_status = self.get_record_status()
-                if not cur_status.get("outputActive", False):
+    def _watch_record(self):
+        try:
+            while not self._guard_stop.wait(0.5):
+                if time.monotonic() - self._record_start_time >= self._max_duration:
                     break
-                time.sleep(0.2)
+                data = self.guard.validate()
+                image = self._scene_image(sample=True)
+                self._validate_image(image, data, sample=True)
+                self._record_samples.append(hashlib.sha256(image.resize((128, 80)).tobytes()).hexdigest())
+                if self._expect_motion and len(self._record_samples) >= 6 and len(set(self._record_samples[-6:])) == 1:
+                    raise CaptureInvalid('预期运动期间画面连续多次完全不变，疑似冻结。')
+                if not self.get_record_status().get('outputActive'):
+                    raise CaptureInvalid('录像被外部停止。')
+        except Exception as error:
+            self._record_error = str(error)
+            try:
+                self.guard.invalidate(error)
+            except Exception:
+                logger.exception('无法保存校准失效状态')
+        finally:
+            if not self._guard_stop.is_set():
+                try:
+                    self.stop_record()
+                except Exception:
+                    logger.exception('守卫停止录像失败')
 
-            # 2. 轮询直到文件落盘且大小大于 0 且句柄释放
+    def stop_record(self, wait_finished=True, timeout_sec=10.0) -> str:
+        self._guard_stop.set()
+        if self._guard_thread and self._guard_thread is not threading.current_thread():
+            self._guard_thread.join(timeout=20)
+            if self._guard_thread.is_alive():
+                self._record_error = '采集守卫未及时退出，录像无效。'
+        with self._finalize_lock:
+            return self._finish_record(wait_finished, timeout_sec)
+
+    def _finish_record(self, wait_finished, timeout_sec):
+        if not self._owns_recording:
+            if self._record_error:
+                raise CaptureInvalid(self._record_error)
+            return self._last_record_file or ''
+        # Re-check at stop to catch a layout change in the final sampling interval.
+        try:
+            self.guard.validate()
+        except Exception as error:
+            self._record_error = self._record_error or str(error)
+        output_path = ''
+        try:
+            response = self.send_request('StopRecord')
+            output_path = response.get('outputPath', '')
+            self._last_record_file = output_path
+            self._owns_recording = False
+            deadline = time.monotonic() + timeout_sec
+            while wait_finished and self.get_record_status().get('outputActive'):
+                if time.monotonic() >= deadline:
+                    raise CaptureInvalid('OBS 停止录像超时。')
+                time.sleep(0.1)
+            after = self.send_request('GetStats')
+            stats = {key: after.get(key, 0) - self._record_stats.get(key, 0)
+                     for key in ('renderSkippedFrames', 'renderTotalFrames', 'outputSkippedFrames', 'outputTotalFrames')}
+            if stats['renderSkippedFrames'] > 0 or stats['outputSkippedFrames'] > 0:
+                self._record_error = self._record_error or 'OBS 报告渲染/编码丢帧，连续性验收未通过。'
+            if not output_path or not Path(output_path).is_file() or Path(output_path).stat().st_size == 0:
+                self._record_error = self._record_error or '录像文件未正确落盘。'
+            report = dict(status='invalid' if self._record_error else 'pending_video_review',
+                          error=self._record_error, video=output_path, finished_at=utc_now(),
+                          calibration=str(self.guard.path), stats_delta=stats,
+                          calibration_snapshot=self._record_calibration,
+                          sampled_frames=len(self._record_samples), distinct_samples=len(set(self._record_samples)),
+                          expect_motion=self._expect_motion)
+            write_json(self.guard.path.parent / 'last-recording.json', report)
             if output_path:
-                t_file = time.time()
-                last_size = -1
-                stable_count = 0
-                while time.time() - t_file < timeout_sec:
-                    if os.path.exists(output_path):
-                        cur_size = os.path.getsize(output_path)
-                        if cur_size > 0:
-                            if cur_size == last_size:
-                                stable_count += 1
-                                if stable_count >= 2:
-                                    break
-                            else:
-                                stable_count = 0
-                            last_size = cur_size
-                    time.sleep(0.2)
-
+                write_json(output_path + '.json', report)
+        except Exception as error:
+            self._record_error = self._record_error or str(error)
+            write_json(self.guard.path.parent / 'last-recording.json',
+                       dict(status='invalid', error=self._record_error, video=output_path, finished_at=utc_now()))
+            raise
+        if self._record_error:
+            raise CaptureInvalid(self._record_error)
         return output_path
 
     def get_record_status(self) -> Dict[str, Any]:
-        """
-        获取当前录制状态
-        返回字典包含：
-        - outputActive: bool (是否在录制)
-        - outputPaused: bool (是否暂停)
-        - outputTimecode: str (当前时长 00:00:00.000)
-        - outputDuration: int (毫秒数)
-        - outputBytes: int (已写入字节)
-        """
-        res = self.send_request("GetRecordStatus")
-        if self._record_start_time and res.get("outputActive"):
-            elapsed = time.time() - self._record_start_time
-            if elapsed > MAX_RECORDING_DURATION_SEC:
-                logger.warning(f"录像时间超出安全阈值 ({MAX_RECORDING_DURATION_SEC}s)，执行自动熔断停止！")
-                self.stop_record()
-        return res
+        return self.send_request('GetRecordStatus')
 
     def toggle_record_pause(self) -> bool:
         """暂停或恢复录制"""

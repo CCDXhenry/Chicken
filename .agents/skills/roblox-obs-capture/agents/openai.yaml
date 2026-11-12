@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roblox OBS 准确采集"
+  short_description: "校准 Studio 游戏视口，验证 OBS 截图边界与录像连续性"
+  default_prompt: "使用 $roblox-obs-capture 校准当前 Studio Play 视口，并验证 OBS 截图和录像准确性。"
