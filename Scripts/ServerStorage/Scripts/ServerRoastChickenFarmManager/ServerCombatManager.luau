@@ -58,7 +58,7 @@ function ServerCombatManager.Zap(self: FarmContext, player: Player, s: PlayerFar
 		local newHealth = animal.health - damage
 		remainingDamage -= damage
 		local to = target.pos + Vector3.yAxis
-		ServerFarmSceneTool.SpawnLightningArc(self, from, to)
+		-- 共享农场遗留路径：电击表现改由客户端 VFX 池统一驱动（若仍走本路径则不再刷服务端 Neon）
 		if tier == 2 then
 			from = to
 		end
