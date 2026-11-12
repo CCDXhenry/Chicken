@@ -1,4 +1,4 @@
--- 服务端消息封装：统一玩家初始化及农场会话变更通知
+-- 服务端消息封装：统一玩家初始化通知
 --!strict
 local serverStorage: ServerStorage = game:GetService("ServerStorage")
 local ServerMsg = {}
@@ -15,11 +15,4 @@ function ServerMsg.ConnectPlayerInfoInit(callback: (player: Player) -> ()): RBXS
 	return playerInfoInitEvent.Event:Connect(callback)
 end
 
-local farmInfoChangedEvent = bindableEventsFolder:WaitForChild("FarmInfoChanged") :: BindableEvent
-function ServerMsg.FireFarmInfoChanged(): ()
-	farmInfoChangedEvent:Fire()
-end
-function ServerMsg.ConnectFarmInfoChanged(callback: () -> ()): RBXScriptConnection
-	return farmInfoChangedEvent.Event:Connect(callback)
-end
 return ServerMsg

@@ -1,12 +1,9 @@
--- 服务端数据层：管理玩家资料与独立于存档的农场会话状态
+-- 服务端数据层：管理玩家资料与存档读写
 --!strict
 local serverStorage: ServerStorage = game:GetService("ServerStorage")
 local replicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
 local players = game:GetService("Players")
 local ServerGameInfo = {}
-local ServerFarmTypes = require(script.Parent:WaitForChild("ServerFarmTypes"))
-type FarmSessionInfo = ServerFarmTypes.FarmSessionInfo
-local farmInfo: FarmSessionInfo?
 
 local serverScripts = serverStorage:WaitForChild("Scripts")
 local ServerMsg = require(serverScripts:FindFirstChild("ServerMsg"))
@@ -142,50 +139,4 @@ function ServerGameInfo.SetPlayerGamePassAcquired(player: Player, gamePassId: nu
 	NetMsg.FireNotifyPlayerAcquiredGamePass(player, gamePassId)
 end
 
--- 农场状态只存在于当前服务器会话，不参与 PlayerSaveInfo 序列化。
-function ServerGameInfo.InitFarmInfo(): FarmSessionInfo
-	if farmInfo then
-		return farmInfo
-	end
-	local info: FarmSessionInfo = {
-		flock = {},
-		roasts = {},
-		eggs = {},
-		playerStates = {},
-		nestLevel = 1,
-		nextEggTime = 0,
-		restaurant = { stock = {}, queue = {}, lanes = {}, leaving = {}, nextArrival = 0, level = 1, serial = 0 },
-	}
-	farmInfo = info
-	return info
-end
-function ServerGameInfo.GetFarmInfo(): FarmSessionInfo?
-	return farmInfo
-end
-function ServerGameInfo.UpdateFarmInfo(update: (FarmSessionInfo) -> ()): ()
-	local info = farmInfo
-	if not info then
-		return
-	end
-	update(info)
-	ServerMsg.FireFarmInfoChanged()
-end
-function ServerGameInfo.InitPlayerFarmInfo(player: Player): ServerFarmTypes.PlayerFarmInfo
-	local info = ServerGameInfo.InitFarmInfo()
-	local existing = info.playerStates[player]
-	if existing then
-		return existing
-	end
-	local playerFarmInfo: ServerFarmTypes.PlayerFarmInfo = { cash = 0, items = {}, zap = 1, collect = 1, cooldowns = {} }
-	info.playerStates[player] = playerFarmInfo
-	return playerFarmInfo
-end
-function ServerGameInfo.RemovePlayerFarmInfo(player: Player): ()
-	if farmInfo then
-		farmInfo.playerStates[player] = nil
-	end
-end
-function ServerGameInfo.ResetFarmInfo(): ()
-	farmInfo = nil
-end
 return ServerGameInfo

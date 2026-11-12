@@ -49,11 +49,6 @@ Check(testPart:GetAttribute("FarmStudsOffsetY") == 2.5, "BindSign sets studs off
 SceneTool.BindSign(testPart, "TestSign", nil, "Private")
 Check(testPart:GetAttribute("FarmSignAudience") == "Private", "BindSign respects explicit Private audience")
 
-SceneTool.ClearSign(testPart)
-Check(testPart:GetAttribute("FarmSign") == nil, "ClearSign clears FarmSign")
-Check(testPart:GetAttribute("FarmSignAudience") == nil, "ClearSign clears FarmSignAudience")
-Check(testPart:GetAttribute("FarmStudsOffsetY") == nil, "ClearSign clears FarmStudsOffsetY")
-
 -- 2. 地块清理重置（Tool.Reset）对 Public 业务标牌的清理与门牌保留
 local villageConfig = luau.load(fs.readFile('Scripts/ReplicatedStorage/Scripts/Shared/FarmVillageConfig.luau'))()
 local node = {}

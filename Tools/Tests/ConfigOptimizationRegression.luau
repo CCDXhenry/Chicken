@@ -87,8 +87,6 @@ Check(GameConfig.SpeciesAppearance.chicken ~= nil and GameConfig.SpeciesAppearan
 Check(GameConfig.SpeciesAppearance.dragon ~= nil and GameConfig.SpeciesAppearance.dragon.Head == "CF4A2F", "火龙外观色值正确")
 
 -- 验证玩法规则
-Check(GameConfig.FarmRules.PopulationCapacity == 28, "牧场蛋和活体上限为 28")
-Check(GameConfig.FarmRules.GroundRoastLifetimeSeconds == 75, "熟食生命周期为 75 秒")
 Check(GameConfig.VillageRules.Capacity == 8, "村落地块容量为 8")
 
 -- 验证配表子模块与字典索引 (支持 int id 与 string key 双重索引)

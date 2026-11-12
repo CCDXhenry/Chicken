@@ -108,41 +108,7 @@ GameConfig.SpeciesAppearance = {
 } :: { [string]: { [string]: string } }
 
 -- =========================================================
--- 5. 非配表配置：农场经营物理与玩法通用规则
--- =========================================================
-GameConfig.FarmRules = {
-	PopulationCapacity = 28, -- 每名玩家农场蛋和活体合计上限 (个)
-	EggFlightSeconds = 1.15, -- 抛蛋飞行时长 (秒)
-	EggArcHeight = 6, -- 抛蛋最高高度 (studs)
-	EggLandingBounds = {
-		XMin = -11,
-		XMax = 11,
-		ZMin = -10,
-		ZMax = 6,
-	},
-	GroundRoastLifetimeSeconds = 75, -- 地面熟食留存时长 (秒)
-	ZapCooldownSeconds = 0.35, -- 电击冷却 (秒)
-	CollectCooldownSeconds = 0.35, -- 拾取冷却 (秒)
-	HatchCooldownSeconds = 0.75, -- 免费加速冷却 (秒)
-	HatchReductionSeconds = 1, -- 每次免费加速减少时长 (秒)
-	HatchInteractionRange = 8, -- 落地蛋交互距离 (studs)
-	AnimalWalkSpeed = 3.8, -- 动物游荡速度 (studs/秒)
-	AnimalFleeSpeed = 8.8, -- 动物受惊逃跑速度 (studs/秒)
-	AnimalFleeRange = 6, -- 玩家惊扰判定半径 (studs)
-	AnimalRoamRadius = 9, -- 游荡范围半径 (studs)
-	AnimalHeights = { 0.78, 0.74, 1.1, 1.1, 1.26 }, -- 动物站立高度 (studs)
-	CustomerSpeed = 9, -- 顾客移速 (studs/秒)
-	CustomerQueueSpacing = 2.18, -- 顾客排队间距 (studs)
-	CustomerArrivalInterval = 1.35, -- 顾客生成间隔 (秒)
-	CustomerQueueCapacity = 4, -- 柜台队列最大排队人数
-	RestaurantCapacity = 24, -- 餐厅备餐架最大容量 (份)
-	MaximumWeaponLevel = 5, -- 武器最高强化等级
-	PickupAnimationSteps = 8, -- 拾取动画步数
-	PickupAnimationInterval = 0.025, -- 拾取动画步长 (秒)
-}
-
--- =========================================================
--- 6. 非配表配置：村落地块与公共道路规则
+-- 5. 非配表配置：村落地块与公共道路规则
 -- =========================================================
 GameConfig.VillageRules = {
 	Capacity = 8,
@@ -154,7 +120,7 @@ GameConfig.VillageRules = {
 }
 
 -- =========================================================
--- 7. 非配表配置：UI 与交互参数
+-- 6. 非配表配置：UI 与交互参数
 -- =========================================================
 GameConfig.UIRules = {
 	ScanSeconds = 0.15,
@@ -164,7 +130,7 @@ GameConfig.UIRules = {
 }
 
 -- =========================================================
--- 8. 配表子模块引入与索引字典构建 (对标 ModelCapture)
+-- 7. 配表子模块引入与索引字典构建 (对标 ModelCapture)
 -- =========================================================
 local function LoadStudioChild(moduleName: string): any
 	if moduleName == "SpeciesData" then
@@ -242,7 +208,7 @@ GameConfig.Baskets = BasketDataModule
 GameConfig.Restaurants = RestaurantDataModule
 
 -- =========================================================
--- 9. 玩家设置与存档类型
+-- 8. 玩家设置与存档类型
 -- =========================================================
 export type SettingInfo = {
 	bgmVolume: number,

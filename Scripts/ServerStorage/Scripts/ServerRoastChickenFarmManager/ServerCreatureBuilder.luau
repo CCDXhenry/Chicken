@@ -1,10 +1,5 @@
 -- 服务端生物与熟食模型构建器：负责动态程序化生成走地动物（鸡、兔、羊、牛、恐龙）与熟食掉落模型
 --!strict
-local replicatedStorage: ReplicatedStorage = game:GetService("ReplicatedStorage")
-local scripts = replicatedStorage:WaitForChild("Scripts")
-local sharedScripts = scripts:WaitForChild("Shared")
-local catalog = require(sharedScripts:WaitForChild("RoastChickenCatalog"))
-
 export type PieceFunc = (parent: Instance, name: string, size: Vector3, cf: CFrame, hex: string, ball: boolean?) -> Part
 
 local ServerCreatureBuilder = {}
@@ -12,7 +7,6 @@ local ServerCreatureBuilder = {}
 local RoastColors = { "DF7926", "C96B3D", "A74D36", "B94133", "D67537" }
 
 function ServerCreatureBuilder.Build(variant: number, cooked: boolean, piece: PieceFunc): Model
-	local info = catalog.creatures[variant]
 	local model = Instance.new("Model")
 	model.Name = (if cooked then "CookedCreature" else "Creature") .. variant
 
