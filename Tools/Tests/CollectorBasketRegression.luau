@@ -8,6 +8,8 @@ assert(models.Name == "Models" and models:IsA("Folder"), "asset must preserve Mo
 local collectorsFolder = models:FindFirstChild("Collectors")
 local basketsFolder = models:FindFirstChild("Baskets")
 assert(collectorsFolder and collectorsFolder:IsA("Folder") and basketsFolder and basketsFolder:IsA("Folder"), "Collectors and Baskets folders are required")
+local toolTemplates = roblox.deserializeModel(fs.readFile("Assets/Studio/CollectorToolTemplates.rbxm"))[1]
+toolTemplates.Parent = models
 local collectors = collectorsFolder
 local baskets = basketsFolder
 
@@ -170,3 +172,22 @@ for index = 1, 4 do
 end
 
 print(string.format("CollectorBasketRegression passed: %d checks", checks))
+
+-- 新的手持收集器保持独立 Tool 模板，不改变原模型与背篓来源。
+for tier = 1, 5 do
+	local tool = collectorBuilder.BuildCollectorTool(tier)
+	local template = toolTemplates:FindFirstChild("CollectorTool_T" .. tier)
+	Check(tool:IsA("Tool") and tool.Name == "FarmCollector", "collector is a Tool")
+	Check(tool:GetAttribute("CollectorTier") == tier, "collector tier")
+	Check(tool.ManualActivationOnly and tool.RequiresHandle and not tool.CanBeDropped, "manual activation only")
+	local handle = tool:FindFirstChild("Handle")
+	Check(handle ~= nil and handle:IsA("BasePart"), "collector Handle")
+	for _, item in tool:GetDescendants() do
+		if item:IsA("WeldConstraint") then Check(item.Part0 == handle and item.Part1:IsDescendantOf(tool), "welds reference cloned Tool") end
+		if item:IsA("BasePart") then Check(not item.Anchored and item.Massless and not item.CanCollide, "collector physics") end
+	end
+	Check(#tool:GetDescendants() == #template:GetDescendants(), "no runtime assembly")
+	tool:Destroy()
+	Check(template.Parent == toolTemplates, "destroying clone preserves source")
+end
+print("Collector Tool checks passed; total " .. checks)

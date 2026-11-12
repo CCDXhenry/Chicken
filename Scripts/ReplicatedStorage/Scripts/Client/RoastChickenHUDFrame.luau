@@ -2,7 +2,6 @@
 --!strict
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local CAPACITY_DENIED_COLOR = Color3.fromRGB(255, 56, 56)
 local BASKET_FULL_COLOR = Color3.fromRGB(255, 80, 80)
 local BASKET_NORMAL_COLOR = Color3.fromRGB(255, 255, 255)
@@ -13,7 +12,6 @@ local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Sh
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
 local GameTexts = require(sharedScripts:WaitForChild("GameTexts"))
 local NumberFormat = require(sharedScripts:WaitForChild("FarmNumberFormat"))
-local Economy = require(sharedScripts:WaitForChild("FarmEconomyConfig"))
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 local ClientGameInfo = require(script.Parent:WaitForChild("ClientGameInfo"))
 local ClientMsg = require(script.Parent:WaitForChild("ClientMsg"))
@@ -36,19 +34,11 @@ export type RoastChickenHUDFrame = typeof(setmetatable(
 		indexButton: ImageButton,
 		eggButton: ImageButton,
 		equipmentButton: ImageButton,
-		actionsFrame: Frame,
-		zapButton: ImageButton,
-		zapNameText: TextLabel,
-		zapDetailText: TextLabel,
-		collectButton: ImageButton,
-		collectNameText: TextLabel,
-		collectDetailText: TextLabel,
 		saleNoticeText: TextLabel,
 		showingMessage: boolean,
 		emphasizingCapacity: boolean,
 		initialized: boolean,
 		scope: LifecycleTool.Lifecycle,
-		onActionTriggered: (FarmConfig.FarmAction) -> (),
 		messageSequence: number,
 		saleSequence: number,
 		pulseToken: number,
@@ -56,9 +46,8 @@ export type RoastChickenHUDFrame = typeof(setmetatable(
 	},
 	RoastChickenHUDFrame
 ))
-function RoastChickenHUDFrame.new(onActionTriggered: (FarmConfig.FarmAction) -> ()): RoastChickenHUDFrame
+function RoastChickenHUDFrame.new(): RoastChickenHUDFrame
 	return setmetatable({
-		onActionTriggered = onActionTriggered,
 		showingMessage = false,
 		emphasizingCapacity = false,
 		initialized = false,
@@ -94,36 +83,13 @@ function RoastChickenHUDFrame.Init(self: RoastChickenHUDFrame, screenGui: Screen
 	self.hintText = container:WaitForChild("FarmHintText") :: TextLabel
 	self.hintScale = self.hintText:WaitForChild("UIScale") :: UIScale
 	self.hintRestColor = self.hintText.TextColor3
-	self.actionsFrame = container:WaitForChild("ActionsFrame") :: Frame
-	self.zapButton = self.actionsFrame:WaitForChild("ZapButton") :: ImageButton
-	self.zapNameText = self.zapButton:WaitForChild("ActionNameText") :: TextLabel
-	self.zapDetailText = self.zapButton:WaitForChild("ActionDetailText") :: TextLabel
-	self.collectButton = self.actionsFrame:WaitForChild("CollectButton") :: ImageButton
-	self.collectNameText = self.collectButton:WaitForChild("ActionNameText") :: TextLabel
-	self.collectDetailText = self.collectButton:WaitForChild("ActionDetailText") :: TextLabel
 	self.saleNoticeText = container:WaitForChild("SaleNoticeText") :: TextLabel
 	UIAdapter.AddAdaptiveFrame(container, UIAdapter.AdaptiveType.Center)
-	self:BindEvents()
 	self.scope:Connect(ClientMsg.ConnectFarmInfoChanged(function()
 		self:Render()
 	end))
-	local function OnInputChanged(): () self:Render() end
-	self.scope:Connect(UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(OnInputChanged))
 	self:Render()
 	UIManager.FitMarkedRoot(container)
-end
-function RoastChickenHUDFrame.BindEvents(self: RoastChickenHUDFrame): ()
-	local function OnZap(): ()
-		self.onActionTriggered("zap")
-	end
-	local function OnCollect(): ()
-		self.onActionTriggered("collect")
-	end
-	local function BindActivated(button: ImageButton, onActivated: () -> ()): ()
-		self.scope:Connect(button.Activated:Connect(onActivated))
-	end
-	BindActivated(self.zapButton, OnZap)
-	BindActivated(self.collectButton, OnCollect)
 end
 function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 	local info = ClientGameInfo.GetFarmInfo()
@@ -134,12 +100,6 @@ function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 		self.basketText.TextColor3 = if isFull then BASKET_FULL_COLOR else BASKET_NORMAL_COLOR
 	end
 	FarmTextTool.Set(self.stockText, GameTexts.Farm.PersonalKitchen.source:format(info.waiting or 0, info.processing or 0, NumberFormat.Number(info.expectedValue or 0)))
-	local touch = UserInputService.PreferredInput == Enum.PreferredInput.Touch
-	FarmTextTool.Set(self.zapNameText, if touch then GameTexts.Farm.ZapTouch.source else GameTexts.Farm.ZapActionName.source)
-	FarmTextTool.Set(self.zapDetailText, GameTexts.Farm.PersonalWeapon.source:format(info.zap, info.weaponLevel or 1, NumberFormat.Number(info.damage or 2)))
-	FarmTextTool.Set(self.collectNameText, if touch then GameTexts.Farm.CollectTouch.source else GameTexts.Farm.CollectActionName.source)
-	FarmTextTool.Set(self.collectDetailText, GameTexts.Farm.CollectActionDetail.source:format(GameTexts.CollectNames[info.collect] or tostring(info.collect), Economy.Collectors[info.collect].maximumItems))
-	self.zapButton.Active, self.collectButton.Active = info.ready == true, info.ready == true
 	if not self.showingMessage then
 		FarmTextTool.Set(self.hintText, if not info.ready then GameTexts.Farm.PlotWaiting.source elseif (info.basketWeight or 0) >= (info.basketCapacity or 12) then GameTexts.Farm.BasketFullHint.source else GameTexts.Farm.LoopHint.source)
 	end

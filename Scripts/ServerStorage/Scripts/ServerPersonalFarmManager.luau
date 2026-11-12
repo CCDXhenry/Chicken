@@ -564,6 +564,8 @@ function Manager.RemovePlayer(self: ServerPersonalFarmManager, player: Player): 
 		if weapon then weapon:Destroy() end
 		local backpack = player:FindFirstChildOfClass("Backpack")
 		if backpack then
+			local bpCollector = backpack:FindFirstChild("FarmCollector")
+			if bpCollector then bpCollector:Destroy() end
 			local bpWeapon = backpack:FindFirstChild("FarmWeapon")
 			if bpWeapon then bpWeapon:Destroy() end
 		end
@@ -593,6 +595,14 @@ function Manager.OnAction(self: ServerPersonalFarmManager, player: Player, actio
 		return
 	end
 	if action ~= "zap" and action ~= "collect" then return end
+	local character = player.Character
+	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+	local toolName = if action == "zap" then "FarmWeapon" else "FarmCollector"
+	local tool = if character then character:FindFirstChild(toolName) else nil
+	local tierAttribute = if action == "zap" then "WeaponTier" else "CollectorTier"
+	local tier = if action == "zap" then session.farm.equippedWeaponTier else session.farm.collectTier
+	if not humanoid or humanoid.Health <= 0 or not tool or not tool:IsA("Tool") or not tool.Enabled or tool:GetAttribute(tierAttribute) ~= tier then return end
+	if action == "zap" and tool:GetAttribute("WeaponLevel") ~= (session.farm.weaponLevels[tostring(tier)] or 1) then return end
 	local root = Scene.GetPlayerRoot(player)
 	if not root then return end
 	if now < (session.cooldowns[action] or 0) then return end

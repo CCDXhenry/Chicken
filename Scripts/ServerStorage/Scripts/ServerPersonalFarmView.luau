@@ -38,8 +38,6 @@ local function SetSign(part: BasePart, template: string, text: string, ownerId: 
 	Scene.BindSign(part, template, nil, audience or "Public")
 	Scene.SetSignText(part, text)
 end
--- 拾取工具挂在角色右侧腰间，避免和强制装备的电击枪抢手。
-local CollectorHipOffset = CFrame.new(1.15, 0.35, 0.15) * CFrame.Angles(0, math.rad(-70), math.rad(18))
 -- 鸡筐挂在背后；正 Z 为角色后方。
 local BasketBackOffset = CFrame.new(0, -0.45, 1)
 
@@ -78,14 +76,36 @@ local function MountWornModel(model: Model, character: Model, humanoidRoot: Base
 	model.Parent = character
 end
 
+-- 保持实际手持位置，普通农场投影不能抢回武器或取消空手。
+local function SyncTool(session: Session, name: string, tierAttribute: string, tier: number, level: number?): ()
+	local player = session.owner
+	local character = player.Character
+	local backpack = player:FindFirstChildOfClass("Backpack")
+	local humanoid = if character then character:FindFirstChildOfClass("Humanoid") else nil
+	if not character or not backpack or not humanoid or humanoid.Health <= 0 then return end
+	local equipped = false
+	local kept: Tool? = nil
+	local containers: { Instance } = { character, backpack }
+	for _, container in containers do
+		for _, child in container:GetChildren() do
+			if child.Name == name then
+				if child:IsA("Tool") and not kept and child:GetAttribute(tierAttribute) == tier and (level == nil or child:GetAttribute("WeaponLevel") == level) then
+					kept = child
+				else
+					equipped = equipped or child.Parent == character
+					child:Destroy()
+				end
+			end
+		end
+	end
+	if kept then return end
+	local tool = if name == "FarmWeapon" then WeaponBuilder.BuildWeaponTool(tier, level or 1) else CollectorBuilder.BuildCollectorTool(tier)
+	tool.Parent = backpack
+	if equipped then humanoid:EquipTool(tool) end
+end
+
 local function UpdateCollectorVisual(session: Session): ()
-	local character = session.owner.Character
-	local root = Scene.GetPlayerRoot(session.owner)
-	if not character or not root then return end
-	local tier = session.farm.collectTier
-	if FindKept(character, "FarmCollector", "CollectorTier", tier) then return end
-	local model = CollectorBuilder.BuildCollectorModel(tier)
-	MountWornModel(model, character, root, CollectorHipOffset)
+	SyncTool(session, "FarmCollector", "CollectorTier", session.farm.collectTier, nil)
 end
 
 local function UpdateBasketVisual(session: Session): ()
@@ -105,47 +125,8 @@ local function UpdateBasketVisual(session: Session): ()
 	BasketBuilder.ApplyCargoFill(model, weightKg, capacityKg)
 end
 local function UpdateWeaponVisual(session: Session): ()
-	local player, farm = session.owner, session.farm
-	local character = player.Character
-	if not character then return end
-	local humanoid = character:FindFirstChildOfClass("Humanoid")
-	if not humanoid or humanoid.Health <= 0 then return end
-	local tier = farm.equippedWeaponTier
-	local level = farm.weaponLevels[tostring(tier)] or 1
-	local backpack = player:FindFirstChildOfClass("Backpack")
-
-	local existingInChar = character:FindFirstChild("FarmWeapon")
-	local existingInBackpack = if backpack then backpack:FindFirstChild("FarmWeapon") else nil
-	local currentTool = (if existingInChar and existingInChar:IsA("Tool") then existingInChar else (if existingInBackpack and existingInBackpack:IsA("Tool") then existingInBackpack else nil)) :: Tool?
-
-	if currentTool then
-		local currentTier = currentTool:GetAttribute("WeaponTier")
-		local currentLevel = currentTool:GetAttribute("WeaponLevel")
-		if currentTier == tier and currentLevel == level then
-			if currentTool.Parent ~= character then
-				humanoid:EquipTool(currentTool)
-			end
-			return
-		end
-		currentTool:Destroy()
-	end
-
-	for _, item in character:GetChildren() do
-		if item:IsA("Tool") and item.Name == "FarmWeapon" then item:Destroy() end
-	end
-	if backpack then
-		for _, item in backpack:GetChildren() do
-			if item:IsA("Tool") and item.Name == "FarmWeapon" then item:Destroy() end
-		end
-	end
-
-	local tool = WeaponBuilder.BuildWeaponTool(tier, level)
-	if backpack then
-		tool.Parent = backpack
-		humanoid:EquipTool(tool)
-	else
-		tool.Parent = character
-	end
+	local farm = session.farm
+	SyncTool(session, "FarmWeapon", "WeaponTier", farm.equippedWeaponTier, farm.weaponLevels[tostring(farm.equippedWeaponTier)] or 1)
 end
 local function UpdateRestaurantVisuals(session: Session, waiting: number, processing: number, expected: number): ()
 	local player, farm = session.owner, session.farm

@@ -19,6 +19,8 @@ local UIManager = require(script.Parent:WaitForChild("UIManager"))
 local FarmSoundTool = require(sharedScripts:WaitForChild("FarmSoundTool"))
 local VisualEffects = require(script.Parent:WaitForChild("FarmVisualEffects"))
 
+local Toolbar = require(script.Parent:WaitForChild("ClientFarmToolbar"))
+
 local localPlayer = players.LocalPlayer
 local MinimumHorizontalAim = 1e-4
 local ClientRoastChickenFarmManager = {}
@@ -26,6 +28,7 @@ ClientRoastChickenFarmManager.__index = ClientRoastChickenFarmManager
 export type ClientRoastChickenFarmManager = typeof(setmetatable(
 	{} :: {
 		hud: RoastChickenHUDFrame.RoastChickenHUDFrame?,
+		toolbar: Toolbar.Controller?,
 		speciesUI: SpeciesManager.ClientFarmSpeciesManager?,
 		vfx: VisualEffects.VfxManager?,
 		scope: LifecycleTool.Lifecycle?,
@@ -49,7 +52,7 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	local function OnAction(action: FarmConfig.FarmAction): ()
 		self:TriggerAction(action)
 	end
-	local hud = RoastChickenHUDFrame.new(OnAction)
+	local hud = RoastChickenHUDFrame.new()
 	self.hud = hud
 	hud:Init(screenGui)
 	local speciesUI = SpeciesManager.new()
@@ -119,27 +122,9 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	end
 	scope:Connect(NetMsg.ConnectNotifyFarmFeedback(OnFeedback))
 
-	local lastZapAt = 0
-	local function TriggerZapDirect(): ()
-		local now = os.clock()
-		if now - lastZapAt < Economy.ZapCooldownSeconds then return end
-		lastZapAt = now
-		self:TriggerAction("zap")
-	end
-
-	-- 键盘备选快捷键 (Q 电击, E 收集, F 加速孵化)
-	local function OnZap(_: string, state: Enum.UserInputState): Enum.ContextActionResult
-		if state == Enum.UserInputState.Begin then
-			TriggerZapDirect()
-			return Enum.ContextActionResult.Sink
-		end
-		return Enum.ContextActionResult.Pass
-	end
-	local function OnCollect(_: string, state: Enum.UserInputState): Enum.ContextActionResult
-		return if state == Enum.UserInputState.Begin and self:TriggerAction("collect") then Enum.ContextActionResult.Sink else Enum.ContextActionResult.Pass
-	end
-	contextActionService:BindAction("Farm_zap", OnZap, false, Enum.KeyCode.Q)
-	contextActionService:BindAction("Farm_collect", OnCollect, false, Enum.KeyCode.E)
+	local toolbar = Toolbar.new(OnAction)
+	self.toolbar = toolbar
+	toolbar:Init(hud.container, screenGui)
 	local function OnHatch(_: string, state: Enum.UserInputState): Enum.ContextActionResult
 		if UserInputService:GetFocusedTextBox() or GuiService.MenuIsOpen then speciesUI:StopHatchHold(); return Enum.ContextActionResult.Pass end
 		if state == Enum.UserInputState.Begin then return if speciesUI:StartHatchHold() then Enum.ContextActionResult.Sink else Enum.ContextActionResult.Pass end
@@ -149,88 +134,6 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 	end
 	contextActionService:BindAction("Farm_hatch", OnHatch, false, Enum.KeyCode.F)
 
-	-- 绑定武器 Tool 道具生命周期与手持激活 (左键攻击)
-	local function BindWeaponTool(tool: Instance): ()
-		if not tool:IsA("Tool") or tool.Name ~= "FarmWeapon" then return end
-		local toolScope = LifecycleTool.new()
-		scope:Connect(tool.AncestryChanged:Connect(function(_, parent)
-			if not parent or not tool:IsDescendantOf(game) then
-				toolScope:Destroy()
-			end
-		end))
-		toolScope:Connect(tool.Activated:Connect(function()
-			TriggerZapDirect()
-		end))
-		toolScope:Connect(tool.Unequipped:Connect(function()
-			task.defer(function()
-				if not self.initialized then return end
-				local char = localPlayer.Character
-				local hum = if char then char:FindFirstChildOfClass("Humanoid") else nil
-				local backpack = localPlayer:FindFirstChildOfClass("Backpack")
-				if hum and hum.Health > 0 and backpack and tool.Parent == backpack then
-					hum:EquipTool(tool)
-				end
-			end)
-		end))
-		local char = localPlayer.Character
-		local hum = if char then char:FindFirstChildOfClass("Humanoid") else nil
-		local bp = localPlayer:FindFirstChildOfClass("Backpack")
-		if hum and hum.Health > 0 and bp and tool.Parent == bp then
-			hum:EquipTool(tool)
-		end
-	end
-
-	local function WatchContainer(container: Instance): ()
-		for _, child in container:GetChildren() do
-			BindWeaponTool(child)
-		end
-		scope:Connect(container.ChildAdded:Connect(BindWeaponTool))
-	end
-
-	local function OnCharacterAdded(char: Model): ()
-		WatchContainer(char)
-		local bp = localPlayer:WaitForChild("Backpack", 5)
-		if bp then WatchContainer(bp) end
-	end
-	if localPlayer.Character then OnCharacterAdded(localPlayer.Character) end
-	scope:Connect(localPlayer.CharacterAdded:Connect(OnCharacterAdded))
-	local initialBp = localPlayer:FindFirstChildOfClass("Backpack")
-	if initialBp then WatchContainer(initialBp) end
-
-	-- 鼠标右键收集判断：检测范围内是否存在烤肉，若有则即时拾取；无烤肉时保证旋转镜头无缝流畅且不误报飘字
-	local function HasNearbyRoasts(): boolean
-		local character = localPlayer.Character
-		local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
-		if not root or not root:IsA("BasePart") then return false end
-		local plotId = localPlayer:GetAttribute("FarmPlotId")
-		if typeof(plotId) ~= "string" then return false end
-		local personalFarms = workspace:FindFirstChild("PersonalFarms")
-		local farmPlot = if personalFarms then personalFarms:FindFirstChild(plotId) else nil
-		local cookedFolder = if farmPlot then farmPlot:FindFirstChild("CookedFood") else nil
-		if not cookedFolder then return false end
-		local rootPos = root.Position
-		for _, item in cookedFolder:GetChildren() do
-			if item:IsA("BasePart") then
-				if (item.Position - rootPos).Magnitude <= 35 then return true end
-			elseif item:IsA("Model") then
-				local primary = item.PrimaryPart or item:FindFirstChildWhichIsA("BasePart")
-				if primary and (primary.Position - rootPos).Magnitude <= 35 then return true end
-			end
-		end
-		return false
-	end
-
-	local function OnInputBegan(input: InputObject, gameProcessed: boolean): ()
-		if gameProcessed then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			TriggerZapDirect()
-		elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
-			if HasNearbyRoasts() then
-				self:TriggerAction("collect")
-			end
-		end
-	end
-	scope:Connect(UserInputService.InputBegan:Connect(OnInputBegan))
 end
 
 local function CollectLiveAnimalCandidates(): { CombatRules.Candidate }
@@ -260,6 +163,7 @@ local function CollectLiveAnimalCandidates(): { CombatRules.Candidate }
 end
 
 function ClientRoastChickenFarmManager.TriggerAction(self: ClientRoastChickenFarmManager, action: FarmConfig.FarmAction): boolean
+	if (action == "zap" or action == "collect") and (not self.toolbar or not self.toolbar:CanUse(action)) then return false end
 	if self.initialized and ClientGameInfo.GetFarmInfo().ready == true and not UIManager.HasShowingWindow() and not UserInputService:GetFocusedTextBox() and not GuiService.MenuIsOpen then
 		if action == "zap" then
 			local camera = Workspace.CurrentCamera
@@ -325,8 +229,7 @@ function ClientRoastChickenFarmManager.Destroy(self: ClientRoastChickenFarmManag
 		return
 	end
 	self.initialized = false
-	contextActionService:UnbindAction("Farm_zap")
-	contextActionService:UnbindAction("Farm_collect")
+	if self.toolbar then self.toolbar:Destroy(); self.toolbar = nil end
 	contextActionService:UnbindAction("Farm_hatch")
 	if self.vfx then
 		self.vfx:Destroy()

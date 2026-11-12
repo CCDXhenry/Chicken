@@ -8,7 +8,7 @@ local playerGui = game.Players.LocalPlayer.PlayerGui
 local screen = storage.UI.GameScreenGui:Clone()
 screen.Name = "FarmLifecycleFixture"
 screen.Parent = playerGui
-local hud = HUD.new(function(): () end)
+local hud = HUD.new()
 local success, failure = xpcall(function(): boolean
 	hud:Init(screen)
 	hud:Init(screen)

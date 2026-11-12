@@ -72,7 +72,7 @@ for tier = 1, 5 do
 	Check(tool.Name == "FarmWeapon", "Name is FarmWeapon for tier " .. tier)
 	Check(tool.CanBeDropped == false, "CanBeDropped is false for tier " .. tier)
 	Check(tool.RequiresHandle == true, "RequiresHandle is true for tier " .. tier)
-	Check(tool.ManualActivationOnly == false, "ManualActivationOnly is false for tier " .. tier)
+	Check(tool.ManualActivationOnly == true, "ManualActivationOnly is true for tier " .. tier)
 	Check(tool:GetAttribute("WeaponTier") == tier, "WeaponTier attribute matches for tier " .. tier)
 	Check(tool:GetAttribute("WeaponLevel") == level, "WeaponLevel attribute matches for tier " .. tier)
 	local expectedDamage = Config.GetDamage(tier, level)

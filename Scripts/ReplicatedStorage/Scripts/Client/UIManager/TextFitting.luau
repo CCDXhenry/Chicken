@@ -19,6 +19,7 @@ type TextFitCache = {
 	text: string,
 	boxSize: Vector2,
 	font: Enum.Font,
+	fontFace: Font,
 	designSize: number,
 	fittedSize: number,
 }
@@ -84,15 +85,31 @@ function TextFitting.CalculateFittedFontSize(
 	availableSize: Vector2,
 	font: Enum.Font,
 	maxSize: number,
-	minSize: number?
+	minSize: number?,
+	fontFace: Font?
 ): number
 	local minimum = minSize or TextFitMinimumSize
 	local maximum = math.max(minimum, math.floor(maxSize))
 	local best = minimum
 	local measureBound = Vector2.new(TextMeasureExtent, TextMeasureExtent)
+	local parameters: GetTextBoundsParams? = nil
+	if font == Enum.Font.Unknown then
+		assert(fontFace, "字体枚举 Unknown 时必须提供 FontFace")
+		local params = Instance.new("GetTextBoundsParams")
+		params.Font = fontFace
+		params.Text = text
+		params.Width = TextMeasureExtent
+		parameters = params
+	end
 	while minimum <= maximum do
 		local candidate = math.floor((minimum + maximum) / 2)
-		local bounds = TextService:GetTextSize(text, candidate, font, measureBound)
+		local bounds: Vector2
+		if parameters then
+			parameters.Size = candidate
+			bounds = TextService:GetTextBoundsAsync(parameters)
+		else
+			bounds = TextService:GetTextSize(text, candidate, font, measureBound)
+		end
 		if bounds.X <= availableSize.X and bounds.Y <= availableSize.Y then
 			best = candidate
 			minimum = candidate + 1
@@ -100,6 +117,7 @@ function TextFitting.CalculateFittedFontSize(
 			maximum = candidate - 1
 		end
 	end
+	if parameters then parameters:Destroy() end
 	return best
 end
 
@@ -128,6 +146,7 @@ function TextFitting.FitTextLabel(label: TextLabel, options: TextFitOptions?): n
 		and previous.text == label.Text
 		and previous.boxSize == availableSize
 		and previous.font == label.Font
+		and previous.fontFace == label.FontFace
 		and previous.designSize == designSize
 	then
 		label.TextSize = previous.fittedSize
@@ -139,13 +158,15 @@ function TextFitting.FitTextLabel(label: TextLabel, options: TextFitOptions?): n
 		availableSize,
 		label.Font,
 		designSize,
-		minimum
+		minimum,
+		label.FontFace
 	)
 	label.TextSize = fittedSize
 	textFitCache[label] = {
 		text = label.Text,
 		boxSize = availableSize,
 		font = label.Font,
+		fontFace = label.FontFace,
 		designSize = designSize,
 		fittedSize = fittedSize,
 	}

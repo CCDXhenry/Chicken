@@ -14,6 +14,7 @@ local Rules = require(Shared.FarmUIConfig)
 local NumberFormat = require(Shared.FarmNumberFormat)
 local UIAdapter = require(Storage.Core.Scripts.Client.UIAdapter)
 local FarmSoundTool = require(Shared.FarmSoundTool)
+local ModelPreview = require(script.Parent.Parent.FarmModelPreview)
 local Common = {}
 export type Context = {
 	window: WindowBase.WindowBase, panel: Frame, pending: boolean,
@@ -59,6 +60,17 @@ function Common.New(frame: Frame, id: string, actions: UIActions.UIActions, open
 		end
 		window.scope:Connect(back.Activated:Connect(OnBack))
 	end
+	local function RefreshWeaponPreviews(): ()
+		local currentTier = Info.GetFarmInfo().zap
+		for _, instance in frame:GetDescendants() do
+			if instance:IsA("ViewportFrame") then
+				local tier = instance:GetAttribute("PreviewWeaponTier")
+				if typeof(tier) == "number" then ModelPreview.RenderWeapon(instance, if tier == 0 then currentTier else tier) end
+			end
+		end
+	end
+	window.scope:Connect(Msg.ConnectFarmInfoChanged(RefreshWeaponPreviews))
+	RefreshWeaponPreviews()
 	window.onClosed = function(): () Text.Remove(frame) end
 	return ctx
 end

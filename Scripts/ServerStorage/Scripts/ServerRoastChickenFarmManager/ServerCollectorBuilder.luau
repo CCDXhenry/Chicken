@@ -17,4 +17,14 @@ function ServerCollectorBuilder.BuildCollectorModel(tier: number): Model
 	return model
 end
 
+function ServerCollectorBuilder.BuildCollectorTool(tier: number): Tool
+	local templates = ReplicatedStorage:WaitForChild("Models"):WaitForChild("CollectorTools")
+	local template = templates:FindFirstChild("CollectorTool_T" .. tostring(tier))
+	assert(template and template:IsA("Tool"), "缺少手持收集器模板")
+	local tool = template:Clone()
+	tool.Name = "FarmCollector"
+	tool:SetAttribute("CollectorTier", tier)
+	return tool
+end
+
 return ServerCollectorBuilder
