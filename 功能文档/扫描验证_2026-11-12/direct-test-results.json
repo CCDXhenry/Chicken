@@ -1,0 +1,70 @@
+[
+  {
+    "test": "BillboardRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "CameraSpawnRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "ConfigOptimizationRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "CookedFoodBillboardRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmBusinessRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "FarmClientRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmContractRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "FarmEconomySnapshot.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmHatchRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "FarmProgressRegression.luau",
+    "result": "passed"
+  },
+  {
+    "test": "FarmRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmUIRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmVillageClientRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmVillageRuntimeRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "FarmVillageStaticAudit.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "PersonalFarmRegression.luau",
+    "result": "environment_blocked"
+  },
+  {
+    "test": "WeaponToolRegression.luau",
+    "result": "passed"
+  }
+]

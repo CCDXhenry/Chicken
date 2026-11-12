@@ -1,0 +1,27 @@
+[
+  {
+    "test": "RunEggBillboardRegression.ps1",
+    "exit": -1,
+    "method": "unchanged embedded Luau written to snapshot root"
+  },
+  {
+    "test": "RunFarmMigrationRegression.ps1",
+    "exit": 0,
+    "method": "unchanged embedded Luau written to snapshot root"
+  },
+  {
+    "test": "RunFarmSignAudienceRegression.ps1",
+    "exit": 0,
+    "method": "unchanged embedded Luau written to snapshot root"
+  },
+  {
+    "test": "RunFarmVillageRegression.ps1",
+    "exit": 0,
+    "method": "unchanged embedded Luau written to snapshot root"
+  },
+  {
+    "test": "RunSaveStoreRegression.ps1",
+    "exit": 0,
+    "method": "unchanged embedded Luau written to snapshot root"
+  }
+]

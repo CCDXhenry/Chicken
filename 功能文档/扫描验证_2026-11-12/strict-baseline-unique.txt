@@ -1,0 +1,16 @@
+ServerStorage/Core/Scripts/TeleportTool](29,49): TypeError: Expected this to be exactly '{Player}', but got '{Instance}'
+ServerStorage/Core/Scripts/TeleportTool](29,58): TypeError: Expected this to be 'TeleportOptions?', but got 'Instance?'
+ServerStorage/Scripts/AnalyticsTool](55,36): TypeError: Expected this to be exactly
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerCreatureBuilder](27,18): TypeError: Cannot call a value of type {number} in union:
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerEggManager](22,20): TypeError: Key 'Nest' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerFarmSceneTool](64,16): TypeError: Value of type 'Model?' could be nil
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerFarmSceneTool](67,3): TypeError: Expected type table, got 'nil' instead
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerFarmSceneTool](68,3): TypeError: Expected type table, got 'nil' instead
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerFarmSceneTool](71,46): TypeError: Cannot cast 'nil' into 'Model' because the types are unrelated
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerInventoryManager](58,71): TypeError: Key 'Shop' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerInventoryManager](59,28): TypeError: Key 'Nest' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerInventoryManager](61,28): TypeError: Key 'Restaurant' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerRestaurant](183,21): TypeError: Expected this to be
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerUpgradeManager](16,23): TypeError: Key 'Nest' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerUpgradeManager](34,23): TypeError: Key 'Restaurant' not found in external type 'Folder'
+ServerStorage/Scripts/ServerRoastChickenFarmManager/ServerUpgradeManager](46,44): TypeError: Key 'Shop' not found in external type 'Folder'

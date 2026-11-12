@@ -1,0 +1,33 @@
+{
+  "timestamp": "2026-11-11 17:35:52",
+  "session_name": "Roqer_Live_Verification_Attack_Pickup_Basket",
+  "obs_connected": true,
+  "stages": {
+    "basket_regression": {
+      "passed": true,
+      "checks": 340
+    },
+    "vfx_regression": {
+      "passed": true,
+      "checks": 26
+    },
+    "weapon_regression": {
+      "passed": true,
+      "checks": 221
+    },
+    "strict_type_check": {
+      "passed": true,
+      "errors": 0
+    }
+  },
+  "screenshots": [
+    "01_script_sync_overview.png",
+    "02_basket_assembly_audit.png",
+    "03_vfx_bezier_audit.png",
+    "04_weapon_combat_audit.png"
+  ],
+  "video_path": "roqer_live_verification.mp4",
+  "total_checks": 587,
+  "status": "PASSED",
+  "video_original": "D:/obs录像/2026-11-11 17-35-53.mp4"
+}
