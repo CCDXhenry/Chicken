@@ -18,7 +18,13 @@ export type FarmMetrics = {
 	firstSaleSeconds: number, firstEnhancementSeconds: number, firstAffordEnhancementSeconds: number,
 	normalEggs: number, goldenEggs: number, rainbowEggs: number, giantEggs: number,
 }
+export type RestaurantActor = { model: Model, phase: string }
+export type RestaurantState = {
+	folder: Folder, packer: Model, workers: { RestaurantActor }, customers: { RestaurantActor }, leaving: { RestaurantActor },
+	arrivalElapsed: number, purchaseRemaining: number, customerSequence: number,
+}
 export type Session = {
+	restaurant: RestaurantState?,
 	owner: Player, plot: BasePart, map: Folder, scope: Lifecycle.Lifecycle, farm: Save.FarmSave,
 	eggs: { Egg }, animals: { [string]: Animal }, ground: { [string]: GroundCargo },
 	nextEggAt: number, nextUnloadAt: number?, cooldowns: { [string]: number }, frozen: boolean, rng: Random,
@@ -27,5 +33,6 @@ export type Session = {
 	testQualitySequence: { string }?, testQualityIndex: number?,
 	projectedEggId: string?, projectedEggFinish: number?,
 	lastUpdateAt: number?,
+	lastZapShotId: number?,
 }
 return {}

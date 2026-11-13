@@ -2,6 +2,8 @@
 --!strict
 local Storage = game:GetService("ReplicatedStorage")
 local Config = require(Storage.Scripts.Shared.FarmEconomyConfig)
+local Texts = require(Storage.Scripts.Shared.GameTexts)
+local Format = require(Storage.Scripts.Shared.FarmNumberFormat)
 local Info = require(script.Parent.Parent.ClientGameInfo)
 local Common = require(script.Parent.Common)
 local Purchase = {}
@@ -50,9 +52,9 @@ function Purchase.Bind(ctx: Common.Context, action: string): ()
 			step = info.restaurantLevel
 			local a, b = Config.Restaurants[step], Config.Restaurants[step + 1]
 			name = "Restaurant level " .. step
-			current = a.workers .. " workers  /  " .. a.speed .. " kg/s each"
-			if b then price = b.price; nextValue = b.workers .. " workers  /  " .. b.speed .. " kg/s each" else nextValue = "Your restaurant is fully upgraded" end
-			extra = (info.waiting or 0) .. " waiting / " .. (info.processing or 0) .. " cooking / " .. (info.expectedValue or 0) .. " coins"
+			current = Texts.Farm.FarmUIWorkers.source:format(a.workers, string.format("%g", a.speed * a.workers))
+			if b then price = b.price; nextValue = Texts.Farm.FarmUIWorkers.source:format(b.workers, string.format("%g", b.speed * b.workers)) else nextValue = "Your restaurant is fully upgraded" end
+			extra = Texts.Farm.RestaurantStock.source:format(info.waiting or 0, info.processing or 0, info.packed or 0, info.carrying or 0, info.counter or 0, Format.Number(info.expectedValue or 0))
 		end
 		Common.Wallet(ctx)
 		Common.Label(details, "ItemNameText", name)

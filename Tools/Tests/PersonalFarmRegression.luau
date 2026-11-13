@@ -1,5 +1,6 @@
 -- 个人农场场景回归：仅在获授权的双人 Play 服务端执行，使用独立经营档与远端临时地块
 --!strict
+local Paths = require(game.ReplicatedStorage.Scripts.Shared.FarmScenePaths)
 local RunService = game:GetService("RunService")
 assert(RunService:IsRunning() and RunService:IsServer(), "Run in an authorized Play server")
 local Players = game:GetService("Players")
@@ -12,6 +13,10 @@ local Business = require(Shared:WaitForChild("FarmBusiness"))
 local Lifecycle = require(Shared:WaitForChild("LifecycleTool"))
 local GameInfo = require(ServerStorage:WaitForChild("Scripts"):WaitForChild("ServerGameInfo"))
 local Manager = require(ServerStorage:WaitForChild("Scripts"):WaitForChild("ServerPersonalFarmManager"))
+local Restaurant = require(ServerStorage:WaitForChild("Scripts"):WaitForChild("ServerPersonalRestaurant"))
+local View = require(ServerStorage.Scripts.ServerPersonalFarmView)
+local activeManager = Manager.GetActive()
+local liveSessions: { [Player]: Manager.Session } = {}
 local playerList = Players:GetPlayers()
 assert(#playerList >= 2, "Two loaded players are required")
 local manager = Manager.new()
@@ -39,6 +44,7 @@ local function CreateFixture(player: Player, x: number, yaw: number): Manager.Se
 	table.insert(fixtureMaps, map)
 	local session: Manager.Session = { owner = player, plot = plot, map = map, scope = scope, farm = Save.CreateDefault(), eggs = {}, animals = {}, ground = {}, nextEggAt = 0, cooldowns = {}, frozen = false, rng = Random.new(17) }
 	manager.sessions[player], manager.reservations[plot] = session, player
+	Restaurant.Init(session, function() end)
 	local character = player.Character
 	assert(character, "Player character required")
 	local root = character:FindFirstChild("HumanoidRootPart")
@@ -46,6 +52,20 @@ local function CreateFixture(player: Player, x: number, yaw: number): Manager.Se
 	originalPivots[character], originalAnchored[root] = character:GetPivot(), root.Anchored
 	root.Anchored = true
 	return session
+end
+local function FinishCounterSale(session: Manager.Session, root: BasePart, now: number): ()
+	local cash = session.farm.cash
+	assert(#session.farm.kitchen == 0 and cash == 0, "packing must not credit cash")
+	Business.RestoreCarriedPackages(session.farm)
+	local restaurant = Paths.Require(session.map, "RestaurantAnchors")
+	root.CFrame = (restaurant:WaitForChild("PackagePickupZone") :: BasePart).CFrame + Vector3.yAxis * 2
+	assert(Restaurant.TakePlayerPackages(session) == 1)
+	Restaurant.Update(session, now, 0)
+	assert(#session.farm.playerCarry == 1 and session.farm.cash == cash)
+	root.CFrame = (restaurant:WaitForChild("CounterDropZone") :: BasePart).CFrame + Vector3.yAxis * 2
+	Restaurant.Update(session, now, 0)
+	for tick = 1, 60 do Restaurant.Update(session, now + tick * 0.1, 0.1) end
+	assert(session.farm.cash == cash + 10 and #session.farm.counter == 0)
 end
 local function CountPopulation(session: Manager.Session): number
 	local count = #session.eggs
@@ -62,9 +82,22 @@ local function Root(player: Player): BasePart
 	assert(root and root:IsA("BasePart"))
 	return root
 end
+local function Action(session: Manager.Session, action: string, targets: { string }?): ()
+ View.Project(session, nil, os.clock())
+ local character = session.owner.Character
+ assert(character)
+ local humanoid = character:FindFirstChildOfClass("Humanoid")
+ assert(humanoid)
+ local toolName = if action == "zap" then "FarmWeapon" else "FarmCollector"
+ local backpack = session.owner:FindFirstChildOfClass("Backpack")
+ local tool = character:FindFirstChild(toolName) or (if backpack then backpack:FindFirstChild(toolName) else nil)
+ assert(tool and tool:IsA("Tool"), "Fixture must equip the actual action tool")
+ humanoid:EquipTool(tool)
+ manager:OnAction(session.owner, action, nil, nil, targets)
+end
 local function Drop(session: Manager.Session, id: string, species: string, quality: string, position: Vector3): ()
 	local model = Instance.new("Model")
-	model.Name, model.Parent = id, session.map
+	model.Name, model.Parent = id, Paths.EnsureRuntime(session.map, "CookedFood")
 	session.ground[id] = { model = model, pos = position, cargo = Business.CreateCargo(id, species, quality), expiresAt = os.clock() + 75 }
 end
 local function ForceHatch(session: Manager.Session, species: string, quality: string, position: Vector3): string
@@ -79,6 +112,12 @@ local function ForceHatch(session: Manager.Session, species: string, quality: st
 	return egg.id
 end
 local success, failure = xpcall(function(): boolean
+-- 隔离夹具期间暂停这些玩家的正式投影，避免后台循环抢回工具；不替换真实 profile.farm。
+if activeManager then
+ for player, session in activeManager.sessions do liveSessions[player] = session end
+ for player in liveSessions do activeManager.sessions[player] = nil end
+end
+
 	local first = CreateFixture(playerList[1], 10000, 90)
 	local second = CreateFixture(playerList[2], 10128, -90)
 	manager:Update(0, 0)
@@ -106,7 +145,7 @@ local success, failure = xpcall(function(): boolean
 	assert(foreignAnimal)
 	local root1, root2 = Root(first.owner), Root(second.owner)
 	root1.CFrame = CFrame.lookAt(foreignAnimal.pos + Vector3.new(0, 2, 4), foreignAnimal.pos + Vector3.yAxis * 2)
-	manager:OnAction(first.owner, "zap")
+	Action(first, "zap", {foreignAnimal.id})
 	assert(CountPopulation(second) == 28 and next(second.ground) == nil)
 	first.cooldowns.zap = 0
 	local animal = nil
@@ -115,16 +154,16 @@ local success, failure = xpcall(function(): boolean
 	animal.pos = first.plot.CFrame:PointToWorldSpace(Vector3.new(-20, 0, -20))
 	animal.model:PivotTo(CFrame.new(animal.pos + Vector3.yAxis * 0.78))
 	root1.CFrame = CFrame.lookAt(animal.pos + Vector3.new(0, 2, 4), animal.pos + Vector3.yAxis * 2)
-	manager:OnAction(first.owner, "zap")
+	Action(first, "zap", {animal.id})
 	local id, ground = next(first.ground)
 	assert(id and ground and ground.cargo.saleValue == 10 and ground.cargo.weightKg == 1)
 	root2.CFrame = CFrame.new(ground.pos + Vector3.yAxis * 2)
-	manager:OnAction(second.owner, "collect")
+	Action(second, "collect", nil)
 	assert(#second.farm.basket == 0 and first.ground[id] ~= nil)
-	manager:OnAction(first.owner, "collect")
+	Action(first, "collect", nil)
 	assert(#first.farm.basket == 1 and first.farm.basket[1].itemId == id and first.ground[id] == nil)
 	table.insert(checks, "Foreign combat and pickup rejected; owned cargo keeps identity")
-	local sell = first.map:FindFirstChild("Sell")
+	local sell = Paths.Find(first.map, "Sell")
 	assert(sell and sell:IsA("BasePart"))
 	root1.CFrame = sell.CFrame + Vector3.yAxis * 2
 	manager:Update(200, 0)
@@ -134,6 +173,7 @@ local success, failure = xpcall(function(): boolean
 	manager:Update(200 + Config.UnloadIntervalSeconds + 0.001, 0)
 	assert(#first.farm.basket == 0 and #first.farm.kitchen == 1 and first.farm.kitchen[1].cargo.itemId == id)
 	manager:Update(202, Config.Species[1].weightKg / Config.Restaurants[1].speed)
+	FinishCounterSale(first, root1, 202)
 	assert(first.farm.cash == 10 and second.farm.cash == 0 and #first.farm.kitchen == 0)
 	manager:Update(204, Config.Species[1].weightKg / Config.Restaurants[1].speed)
 	assert(first.farm.cash == 10)
@@ -145,15 +185,16 @@ local success, failure = xpcall(function(): boolean
 	secondAnimal.model:PivotTo(CFrame.new(secondAnimal.pos + Vector3.yAxis * 0.78))
 	root2.CFrame = CFrame.lookAt(secondAnimal.pos + Vector3.new(0, 2, 4), secondAnimal.pos + Vector3.yAxis * 2)
 	second.cooldowns.zap, second.cooldowns.collect = 0, 0
-	manager:OnAction(second.owner, "zap")
-	manager:OnAction(second.owner, "collect")
+	Action(second, "zap", {secondAnimal.id})
+	Action(second, "collect", nil)
 	assert(#second.farm.basket == 1)
-	local secondSell = second.map:FindFirstChild("Sell")
+	local secondSell = Paths.Find(second.map, "Sell")
 	assert(secondSell and secondSell:IsA("BasePart"))
 	root2.CFrame = secondSell.CFrame + Vector3.yAxis * 2
 	manager:Update(205, 0)
 	manager:Update(205 + Config.UnloadIntervalSeconds + 0.001, 0)
 	manager:Update(207, Config.Species[1].weightKg / Config.Restaurants[1].speed)
+	FinishCounterSale(second, root2, 207)
 	assert(second.farm.cash == 10 and first.farm.cash == 10 and #second.farm.kitchen == 0)
 	table.insert(checks, "Opposite rotated farms both finish kill, pickup, delivery and independent sale")
 
@@ -173,7 +214,10 @@ local success, failure = xpcall(function(): boolean
 	assert(prompt)
 	manager:OnCommand(first.owner, { action = "confirm", confirmationId = "wrong-token" })
 	assert(first.farm.cash == 300)
-	-- 模拟在确认弹窗开启期间后台下蛋循环生成新蛋，确认操作仍需一次生效
+	-- 先腾出一个生产名额，避免此前 28 上限夹具使新蛋断言依赖运行时间。
+ local capacityId, capacityAnimal = next(first.animals)
+ if capacityId and capacityAnimal then capacityAnimal.model:Destroy(); first.animals[capacityId] = nil end
+ -- 模拟在确认弹窗开启期间后台下蛋循环生成新蛋，确认操作仍需一次生效
 	first.nextEggAt = 0
 	manager:Update(os.clock(), 0)
 	assert(#first.eggs > 0)
@@ -225,23 +269,23 @@ local success, failure = xpcall(function(): boolean
 	local secondRabbitId = ForceHatch(first, "rabbit", "normal", first.plot.Position + Vector3.new(0, 0, 8))
 	root1.CFrame = CFrame.lookAt(first.plot.Position + Vector3.yAxis * 2, first.plot.Position + Vector3.new(0, 2, 1))
 	first.cooldowns.zap = 0
-	manager:OnAction(first.owner, "zap")
+	Action(first, "zap", {firstRabbitId, secondRabbitId})
 	assert(not first.animals[firstRabbitId] and not first.animals[secondRabbitId])
 	assert(first.ground[firstRabbitId].cargo.weightKg == 3 and first.ground[secondRabbitId].cargo.saleValue == 50)
 	first.farm.cash, first.cooldowns.purchase = 110, 0
 	manager:OnCommand(first.owner, { action = "buyCollect", expectedStep = Business.GetPurchaseStep(first.farm, "buyCollect") })
 	Drop(first, "overweight-cow", "cow", "normal", first.plot.Position + Vector3.new(0, 0, 2))
 	first.cooldowns.collect = 0
-	manager:OnAction(first.owner, "collect")
+	Action(first, "collect", nil)
 	assert(first.ground["overweight-cow"] ~= nil and #first.farm.basket == 3 and Business.GetWeight(first.farm) == 7)
 	table.insert(checks, "Actual T2 Lv3 chain kills 6+6; directional collector skips 27 kg item and collects both valid rabbits")
 	manager:FreezePlayer(first.owner)
 	local count, cash = CountPopulation(first), first.farm.cash
 	manager:Update(300, 1)
-	manager:OnAction(first.owner, "zap")
+	Action(first, "zap", nil)
 	assert(CountPopulation(first) == count and first.farm.cash == cash)
 	manager:RemovePlayer(first.owner)
-	assert(not manager.reservations[first.plot] and first.map.Parent == workspace and first.map:GetAttribute("OwnerUserId") == nil and not first.map:FindFirstChild("Eggs"))
+	assert(not manager.reservations[first.plot] and first.map.Parent == workspace and first.map:GetAttribute("OwnerUserId") == nil and not Paths.Find(first.map, "Eggs"))
 	table.insert(checks, "Freeze blocks operations; release clears runtime entities, preserves static map and frees plot")
 	return true
 end, debug.traceback)
@@ -252,6 +296,7 @@ for character, pivot in originalPivots do if character.Parent then character:Piv
 for root, anchored in originalAnchored do if root.Parent then root.Anchored = anchored end end
 local active = Manager.GetActive()
 if active then
+ for player, session in liveSessions do active.sessions[player] = session end
 	for player, session in active.sessions do player:SetAttribute("FarmPlotId", session.plot.Name) end
 	active:Update(os.clock(), 0)
 end

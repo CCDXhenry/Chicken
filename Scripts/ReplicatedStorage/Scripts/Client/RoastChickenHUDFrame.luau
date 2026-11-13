@@ -99,7 +99,7 @@ function RoastChickenHUDFrame.Render(self: RoastChickenHUDFrame): ()
 	if not self.emphasizingCapacity then
 		self.basketText.TextColor3 = if isFull then BASKET_FULL_COLOR else BASKET_NORMAL_COLOR
 	end
-	FarmTextTool.Set(self.stockText, GameTexts.Farm.PersonalKitchen.source:format(info.waiting or 0, info.processing or 0, NumberFormat.Number(info.expectedValue or 0)))
+	FarmTextTool.Set(self.stockText, GameTexts.Farm.RestaurantStock.source:format(info.waiting or 0, info.processing or 0, info.packed or 0, info.carrying or 0, info.counter or 0, NumberFormat.Number(info.expectedValue or 0)))
 	if not self.showingMessage then
 		FarmTextTool.Set(self.hintText, if not info.ready then GameTexts.Farm.PlotWaiting.source elseif (info.basketWeight or 0) >= (info.basketCapacity or 12) then GameTexts.Farm.BasketFullHint.source else GameTexts.Farm.LoopHint.source)
 	end

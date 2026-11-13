@@ -7,6 +7,7 @@ local Workspace = game:GetService("Workspace")
 local players = game:GetService("Players")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
+local Paths = require(sharedScripts:WaitForChild("FarmScenePaths"))
 local NetMsg = require(sharedScripts:WaitForChild("NetMsg"))
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
 local Economy = require(sharedScripts:WaitForChild("FarmEconomyConfig"))
@@ -19,10 +20,12 @@ local UIManager = require(script.Parent:WaitForChild("UIManager"))
 local FarmSoundTool = require(sharedScripts:WaitForChild("FarmSoundTool"))
 local VisualEffects = require(script.Parent:WaitForChild("FarmVisualEffects"))
 
+local ZapPrediction = require(script.Parent:WaitForChild("FarmZapPrediction"))
 local Toolbar = require(script.Parent:WaitForChild("ClientFarmToolbar"))
 
 local localPlayer = players.LocalPlayer
 local MinimumHorizontalAim = 1e-4
+local ZapResultTimeoutSeconds = 2
 local ClientRoastChickenFarmManager = {}
 ClientRoastChickenFarmManager.__index = ClientRoastChickenFarmManager
 export type ClientRoastChickenFarmManager = typeof(setmetatable(
@@ -33,12 +36,13 @@ export type ClientRoastChickenFarmManager = typeof(setmetatable(
 		vfx: VisualEffects.VfxManager?,
 		scope: LifecycleTool.Lifecycle?,
 		initialized: boolean,
+		zapPrediction: ZapPrediction.Tracker,
 	},
 	ClientRoastChickenFarmManager
 ))
 
 function ClientRoastChickenFarmManager.new(): ClientRoastChickenFarmManager
-	return setmetatable({ initialized = false }, ClientRoastChickenFarmManager)
+	return setmetatable({ initialized = false, zapPrediction = ZapPrediction.new() }, ClientRoastChickenFarmManager)
 end
 
 function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager, screenGui: ScreenGui): ()
@@ -65,7 +69,13 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 
 	-- 监听服务端广播的高品质视觉事件 (电击弹道/熟食飞入鸡筐/交货丰收抛跃)
 	local function OnVisual(event: NetMsg.VisualEvent): ()
-		if event.kind == "zap" then
+		if event.kind == "zapResult" then
+			if not event.shotId then return end
+			local corrections = self.zapPrediction:Resolve(event.shotId, event.accepted == true, event.targets or {})
+			for _, target in corrections do
+				vfx:CreateHitImpact(Vector3.new(target.x, target.y, target.z), target.damage, target.isCooked, event.tier or 1)
+			end
+		elseif event.kind == "zap" then
 			local from = if event.fromPos then Vector3.new(event.fromPos.x, event.fromPos.y, event.fromPos.z) else Vector3.zero
 			local targets = event.targets or {}
 			vfx:PlayZapEffects(event.tier or 1, from, targets)
@@ -79,6 +89,10 @@ function ClientRoastChickenFarmManager.Init(self: ClientRoastChickenFarmManager,
 		end
 	end
 	scope:Connect(NetMsg.ConnectNotifyFarmVisual(OnVisual))
+	local function OnCharacterRemoving(): ()
+		self.zapPrediction:Clear()
+	end
+	scope:Connect(localPlayer.CharacterRemoving:Connect(OnCharacterRemoving))
 
 	local function OnShop(): ()
 		FarmSoundTool.Play("UIClick")
@@ -142,7 +156,7 @@ local function CollectLiveAnimalCandidates(): { CombatRules.Candidate }
 	end
 	local personalFarms = workspace:FindFirstChild("PersonalFarms")
 	local farmPlot = if personalFarms then personalFarms:FindFirstChild(plotId) else nil
-	local liveFolder = if farmPlot then farmPlot:FindFirstChild("LiveAnimals") else nil
+	local liveFolder = if farmPlot then Paths.Find(farmPlot, "LiveAnimals") else nil
 	if not liveFolder then
 		return candidates
 	end
@@ -186,7 +200,7 @@ function ClientRoastChickenFarmManager.TriggerAction(self: ClientRoastChickenFar
 				byId[candidate.id] = candidate
 			end
 			local targetIds: { string } = {}
-			local visualTargets: { { x: number, y: number, z: number, damage: number, isCooked: boolean, id: string } } = {}
+			local visualTargets: { ZapPrediction.Target } = {}
 			for _, hit in hits do
 				local candidate = byId[hit.id]
 				if candidate then
@@ -201,15 +215,21 @@ function ClientRoastChickenFarmManager.TriggerAction(self: ClientRoastChickenFar
 					})
 				end
 			end
+			local cancellations: ZapPrediction.Cancellations = {}
 			FarmSoundTool.Play("Zap_T" .. tostring(tier))
 			if self.vfx then
 				if #visualTargets == 0 then
 					self.vfx:PlayZapMiss(tier, aim)
 				else
-					self.vfx:PlayZapEffects(tier, root.Position, visualTargets)
+					cancellations = self.vfx:PlayZapEffects(tier, root.Position, visualTargets)
 				end
 			end
-			NetMsg.FireRequestFarmCommand({ action = "zap", aim = { x = aim.X, y = 0, z = aim.Z }, targetIds = targetIds })
+			local shotId = self.zapPrediction:Begin(visualTargets, cancellations)
+			local scope = self.scope
+			if scope then
+				scope:Delay(ZapResultTimeoutSeconds, function(): () self.zapPrediction:Expire(shotId) end)
+			end
+			NetMsg.FireRequestFarmCommand({ action = "zap", shotId = shotId, aim = { x = aim.X, y = 0, z = aim.Z }, targetIds = targetIds })
 		else
 			-- 拾取音效在原熟食弹入背篓结束时播放，避免前置 UIClick 割裂
 			if action == "collect" and self.vfx then
@@ -227,6 +247,7 @@ function ClientRoastChickenFarmManager.Destroy(self: ClientRoastChickenFarmManag
 		return
 	end
 	self.initialized = false
+	self.zapPrediction:Clear()
 	if self.toolbar then self.toolbar:Destroy(); self.toolbar = nil end
 	contextActionService:UnbindAction("Farm_hatch")
 	if self.vfx then

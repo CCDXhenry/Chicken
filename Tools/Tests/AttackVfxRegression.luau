@@ -185,7 +185,8 @@ function TweenService:Create(target, _, goals)
 	table.insert(createdTweens, tween)
 	return tween
 end
-local modules = {}
+local modules = {
+ FarmScenePaths = require("../../Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths"),}
 local shared = {}
 function shared:WaitForChild(name)
 	return if name == "Shared" then self else name

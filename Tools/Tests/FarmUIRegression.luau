@@ -25,7 +25,7 @@ Info.GetFarmInfo = function() return fake end
 Net.FireRequestFarmCommand = function(command: { [string]: unknown }): () table.insert(requests, command) end
 local success, failure = xpcall(function(): boolean
 	manager:Init(screen); manager:Init(screen)
-	local farm = workspace.PersonalFarms:FindFirstChild("Farm_" .. player.UserId)
+	local farm = workspace.PersonalFarms:FindFirstChild(tostring(player:GetAttribute("FarmPlotId")))
 	assert(farm)
 	local entries: { [string]: BasePart } = {}
 	for _, part in farm:GetDescendants() do if part:IsA("BasePart") then local id = part:GetAttribute("FarmUIEntry"); if typeof(id) == "string" then entries[id] = part end end end

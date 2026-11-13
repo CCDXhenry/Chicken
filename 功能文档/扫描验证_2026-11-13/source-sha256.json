@@ -1,0 +1,7 @@
+{
+  "Scripts/ServerStorage/Scripts/ServerPersonalFarmManager.luau": "8b2215fd88a98130892760a4b98cde522582f5477438d205b8e07c85bb89197c",
+  "Scripts/ReplicatedStorage/Scripts/Client/UIManager/TextFitting.luau": "609acb63b9eaf54c0be452004d98d4b2bb3c020fe06c4c5c7a972e0a6c6b9851",
+  "Scripts/ReplicatedStorage/Scripts/Shared/FarmCombatRules.luau": "e76d32851f6ed46e1ad1fde1a41bb3cf28f88d7cbe6901b8ee5d8b0565ea5127",
+  "Scripts/ReplicatedStorage/Scripts/Shared/FarmEconomyConfig.luau": "2753c855ba0faefc578773c9c3bc23e12ee4520adef399ecb5553fb7518b2b89",
+  "Tools/Tests/SpeciesSwitchRegression.luau": "0db1859ff751736bec2b34ef05d82083ab1dc856efeca5a80364a2aaed94584d"
+}

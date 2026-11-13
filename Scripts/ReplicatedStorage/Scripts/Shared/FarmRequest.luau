@@ -3,6 +3,7 @@
 local Config = if script then require(script.Parent:WaitForChild("FarmEconomyConfig")) else require("./FarmEconomyConfig")
 export type Request = {
 	action: string,
+	shotId: number?,
 	targetId: string?,
 	speciesId: string?,
 	tier: number?,
@@ -16,10 +17,14 @@ local MaximumReportedTargets = 1
 for _, weapon in Config.Weapons do
 	MaximumReportedTargets = math.max(MaximumReportedTargets, weapon.maximumTargets)
 end
-local SimpleActions = { zap = true, collect = true, buyZap = true, buyCollect = true, buyNest = true, buyRestaurant = true, buyBasket = true, enhanceWeapon = true }
+local SimpleActions = { zap = true, collect = true, takePackages = true, buyZap = true, buyCollect = true, buyNest = true, buyRestaurant = true, buyBasket = true, enhanceWeapon = true }
 local SpeciesIds = { chicken = true, rabbit = true, sheep = true, cow = true, dragon = true }
 local function IsId(value: unknown): boolean
 	return type(value) == "string" and #value > 0 and #value <= 128
+end
+function FarmRequest.GetShotId(value: unknown): number?
+	if type(value) ~= "number" or value ~= value or value % 1 ~= 0 or value < 1 or value > 9007199254740991 then return nil end
+	return value
 end
 function FarmRequest.Parse(value: unknown): Request?
 	if type(value) ~= "table" then return nil end
@@ -28,6 +33,11 @@ function FarmRequest.Parse(value: unknown): Request?
 	if type(action) ~= "string" then return nil end
 	if SimpleActions[action] then
 		local request: Request = { action = action }
+		if action == "zap" and data.shotId ~= nil then
+			local shotId = FarmRequest.GetShotId(data.shotId)
+			if not shotId then return nil end
+			request.shotId = shotId
+		end
 		if data.expectedStep ~= nil then
 			local step = data.expectedStep
 			if type(step) ~= "number" or step ~= step or step % 1 ~= 0 or step < 1 or step > Config.GetWeaponProgressStep(#Config.Weapons, Config.MaximumWeaponLevel) then return nil end

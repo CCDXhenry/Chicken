@@ -1,0 +1,2 @@
+ServerStorage/Core/Scripts/TeleportTool](29,49): TypeError: Expected this to be exactly '{Player}', but got '{Instance}'
+ServerStorage/Core/Scripts/TeleportTool](29,58): TypeError: Expected this to be 'TeleportOptions?', but got 'Instance?'

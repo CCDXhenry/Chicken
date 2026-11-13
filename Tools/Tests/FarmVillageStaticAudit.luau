@@ -1,5 +1,8 @@
 -- 八人农场 Edit 静态审计：检查地块、朝向、资产预算、入口通行与标牌模板
 --!strict
+local loadPaths, loadError = loadstring(game:GetService("ScriptEditorService"):GetEditorSource(game.ReplicatedStorage.Scripts.Shared.FarmScenePaths), "FarmScenePaths")
+assert(loadPaths, loadError)
+local Paths = loadPaths()
 assert(not game:GetService("RunService"):IsRunning(), "Edit audit only")
 local plots = workspace:FindFirstChild("FarmPlots")
 local farms = workspace:FindFirstChild("PersonalFarms")
@@ -30,12 +33,12 @@ for index=1,8 do
  local left=index%2==1
  assert((plot.Position-Vector3.new(if left then -80 else 80,0,rows[math.ceil(index/2)])).Magnitude<0.001)
  assert(plot.CFrame.LookVector:Dot(if left then -Vector3.xAxis else Vector3.xAxis)>0.999)
- for _,key in {"FarmSpawn","Sell","OwnerSign","Nest","Restaurant","Shop"} do assert(map:FindFirstChild(key),name.."/"..key) end
- local spawn=map:FindFirstChild("FarmSpawn")
+ for _,key in {"FarmSpawn","Sell","OwnerSign","Nest","Restaurant","Shop"} do assert(Paths.Find(map,key),name.."/"..key) end
+ local spawn=Paths.Find(map, "FarmSpawn")
  assert(spawn and spawn:IsA("SpawnLocation") and not spawn.Enabled)
- for _,key in {"Eggs","LiveAnimals","CookedFood"} do assert(not map:FindFirstChild(key)) end
+ for _,key in {"Eggs","LiveAnimals","CookedFood"} do assert(not Paths.Find(map,key)) end
  local restaurant=map:FindFirstChild("Restaurant")
- assert(restaurant and not restaurant:FindFirstChild("Workers"))
+ assert(restaurant and not Paths.Find(map, "Runtime"))
  local minimum,maximum=Vector3.new(math.huge,math.huge,math.huge),Vector3.new(-math.huge,-math.huge,-math.huge)
  for _,part in map:GetDescendants() do if part:IsA("BasePart") then
   local lo,hi=Bounds(part,plot.CFrame)

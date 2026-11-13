@@ -11,5 +11,6 @@ Config.EntryPrompts = {
 	ToolShop = { action = "Open", object = "Tool shop" },
 	Species = { action = "Manage", object = "Species" },
 	Restaurant = { action = "Manage", object = "Restaurant" },
+	PackagePickup = { action = "Take all", object = "Packed food" },
 }
 return Config

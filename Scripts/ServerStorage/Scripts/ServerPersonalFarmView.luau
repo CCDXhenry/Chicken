@@ -3,6 +3,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
 local Shared = ReplicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
+local Paths = require(Shared:WaitForChild("FarmScenePaths"))
 local Config = require(Shared:WaitForChild("FarmEconomyConfig"))
 local Save = require(Shared:WaitForChild("FarmSaveData"))
 local Business = require(Shared:WaitForChild("FarmBusiness"))
@@ -130,63 +131,12 @@ local function UpdateWeaponVisual(session: Session): ()
 end
 local function UpdateRestaurantVisuals(session: Session, waiting: number, processing: number, expected: number): ()
 	local player, farm = session.owner, session.farm
-	local restaurant = session.map:FindFirstChild("Restaurant")
-	local stockSign = if restaurant then restaurant:FindFirstChild("StockSign") else nil
+	local packed, carrying, counter = Business.GetPackageCounts(farm)
+	local stockSign = Paths.Find(session.map, "StockSign")
 	if stockSign and stockSign:IsA("BasePart") then
-		SetSign(stockSign, "RestaurantSignGui", Texts.Farm.PersonalKitchen.source:format(waiting, processing, NumberFormat.Number(expected)), player.UserId)
+		SetSign(stockSign, "RestaurantSignGui", Texts.Farm.RestaurantBoard.source:format(waiting, processing, packed, carrying, counter, NumberFormat.Number(expected)), player.UserId)
 	end
-	if restaurant then
-		local workers: Instance
-		local existingWorkers = restaurant:FindFirstChild("Workers")
-		if existingWorkers then workers = existingWorkers else
-			local folder = Instance.new("Folder")
-			folder.Name, folder.Parent = "Workers", restaurant
-			workers = folder
-		end
-		local head = restaurant:FindFirstChild("QueueHead")
-		local entrance = restaurant:FindFirstChild("QueueStart")
-		local template = ServerStorage:WaitForChild("Models"):FindFirstChild("FarmWorkerTemplate")
-		if head and head:IsA("BasePart") and entrance and entrance:IsA("BasePart") and template and template:IsA("Model") then
-			local orders: { Save.Order } = {}
-			for _, order in farm.kitchen do if order.state == "Processing" then table.insert(orders, order) end end
-			local forward = Scene.FlatVector(head.Position - entrance.Position)
-			if forward.Magnitude < 0.01 then forward = Vector3.zAxis else forward = forward.Unit end
-			local right = Vector3.new(forward.Z, 0, -forward.X)
-			for index = 1, Config.Restaurants[farm.restaurantLevel].workers do
-				local name = "Worker" .. index
-				local model = workers:FindFirstChild(name)
-				local spot = restaurant:FindFirstChild("WorkerSpot" .. index) or restaurant:FindFirstChild("Worker" .. index .. "Spot")
-				local targetCFrame: CFrame
-				if spot and spot:IsA("BasePart") then
-					spot.Transparency = 1
-					targetCFrame = spot.CFrame
-				else
-					local counter = restaurant:FindFirstChild("ServiceCounter" .. index)
-					local counterPos: Vector3
-					if counter and counter:IsA("BasePart") then
-						counterPos = counter.Position
-					else
-						counterPos = head.Position + forward * 4.05 + right * ((index - 1) * 5.1)
-					end
-					local standPosition = Vector3.new(counterPos.X, head.Position.Y + 0.1, counterPos.Z) + forward * 2.0
-					targetCFrame = CFrame.lookAt(standPosition, Vector3.new(counterPos.X, head.Position.Y + 0.1, counterPos.Z))
-				end
-				if not model then
-					local clone = template:Clone()
-					clone.Name = name
-					clone:PivotTo(targetCFrame)
-					SetOwnership(clone, session)
-					clone.Parent = workers
-					model = clone
-				end
-				if model and model:IsA("Model") and model.PrimaryPart then
-					local order = orders[index]
-					model.PrimaryPart:SetAttribute("FarmStudsOffsetY", 3.8)
-					SetSign(model.PrimaryPart, "WorkerSignGui", if order then Texts.Farm.WorkerPacking.source:format(index, math.ceil(order.remainingSeconds)) else Texts.Farm.WorkerIdle.source:format(index), player.UserId)
-				end
-			end
-		end
-	end
+
 end
 local function Project(session: Session, egg: Egg?, now: number): ()
 	UpdateBasketVisual(session)
@@ -206,7 +156,11 @@ local function Project(session: Session, egg: Egg?, now: number): ()
 	player:SetAttribute("FarmBasketTier", farm.basketTier)
 	player:SetAttribute("FarmWeaponLevel", farm.weaponLevels[tostring(farm.equippedWeaponTier)])
 	for tier = 1, #Config.Weapons do player:SetAttribute("FarmWeaponLevel_" .. tier, farm.weaponLevels[tostring(tier)] or 0) end
-	player:SetAttribute("FarmStock", waiting + processing)
+	local packed, carrying, counter = Business.GetPackageCounts(farm)
+	player:SetAttribute("FarmPacked", packed)
+	player:SetAttribute("FarmCarrying", carrying)
+	player:SetAttribute("FarmCounter", counter)
+	player:SetAttribute("FarmStock", waiting + processing + packed + carrying + counter)
 	player:SetAttribute("FarmWaiting", waiting)
 	player:SetAttribute("FarmProcessing", processing)
 	player:SetAttribute("FarmExpectedValue", expected)

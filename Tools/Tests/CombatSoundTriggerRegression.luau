@@ -12,12 +12,14 @@ end
 local function Noop() end
 local signal = { Connect = function() return {} end }
 local sounds, requests = {}, {}
+local delayed = {}
 local feedback, visual
 local info = { ready = true, zap = 1, weaponLevel = 1 }
 local modal, focused, canUse = false, false, true
+local liveAnimals = {}
 local root = { Position = Vector3.zero, IsA = function(_, class) return class == "BasePart" end }
 local character = { FindFirstChild = function() return root end }
-local player = { Character = character, GetAttribute = function() return nil end }
+local player = { Character = character, CharacterRemoving = signal, GetAttribute = function() return "Plot01" end }
 local services = {
 	ContextActionService = { BindAction = Noop },
 	UserInputService = { GetFocusedTextBox = function() return focused end },
@@ -31,12 +33,21 @@ services.ReplicatedStorage = { WaitForChild = function() return scripts end }
 local vfx = { Init = Noop, ReserveNearbyRoasts = Noop }
 local misses, hits, pickups = 0, 0, 0
 function vfx:PlayZapMiss() misses += 1 end
-function vfx:PlayZapEffects() hits += 1 end
+local cancelled, corrections = 0, 0
+function vfx:PlayZapEffects(_, _, targets)
+	hits += 1
+	local cancellations = {}
+	for _, target in targets do cancellations[target.id] = function() cancelled += 1 end end
+	return cancellations
+end
+function vfx:CreateHitImpact() corrections += 1 end
 function vfx:PlayOriginalRoastIntoBasket() pickups += 1 end
 local hud = { container = {}, Init = Noop, ShowMessage = Noop, ShowSaleNotice = Noop, ShowCapacityDenied = Noop }
 for _, key in { "shopButton", "indexButton", "eggButton", "equipmentButton" } do hud[key] = { Activated = signal } end
 local resolved = {}
 local modules = {
+ FarmScenePaths = require("../../Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths"),
+	FarmZapPrediction = require("../../Scripts/ReplicatedStorage/Scripts/Client/FarmZapPrediction"),
 	NetMsg = {
 		ConnectNotifyFarmFeedback = function(callback) feedback = callback; return {} end,
 		ConnectNotifyFarmVisual = function(callback) visual = callback; return {} end,
@@ -46,7 +57,7 @@ local modules = {
 	FarmConfig = {},
 	FarmEconomyConfig = { Weapons = { {} }, MaximumWeaponLevel = 10 },
 	FarmCombatRules = { ResolveShot = function() return resolved end },
-	LifecycleTool = { new = function() return { Connect = Noop } end },
+	LifecycleTool = { new = function() return { Connect = Noop, Delay = function(_, _, callback) table.insert(delayed, callback) end } end },
 	ClientGameInfo = { InitFarmInfo = Noop, GetFarmInfo = function() return info end },
 	RoastChickenHUDFrame = { new = function() return hud end },
 	ClientFarmSpeciesManager = { new = function() return { Init = Noop } end },
@@ -59,7 +70,9 @@ local managerType = luau.load(fs.readFile("Scripts/ReplicatedStorage/Scripts/Cli
 	environment = {
 		game = { GetService = function(_, name) return services[name] end },
 		script = { Parent = shared }, Vector3 = Vector3, Enum = roblox.Enum,
-		workspace = { FindFirstChild = function() return nil end },
+		workspace = { FindFirstChild = function()
+			return {FindFirstChild=function() return {FindFirstChild=function() return {FindFirstChild=function() return {GetChildren=function() return liveAnimals end} end} end} end}
+		end },
 		require = function(name) return assert(modules[name], name) end,
 	},
 })()
@@ -100,4 +113,29 @@ visual({ kind = "pickup", speciesId = "chicken", weightKg = 1 })
 Check(pickups == 1, "only confirmed pickup routes to arrival feedback")
 feedback("熟食", nil)
 Check(#sounds == 1, "late cooked feedback cannot replay predicted impact")
+local animal = {PrimaryPart={Position=Vector3.new(0,0,-5)},IsA=function() return true end,
+	GetAttribute=function(_,key) return if key=="EntityId" then "rabbit" elseif key=="Health" then 3 else nil end}
+table.insert(liveAnimals, animal)
+resolved = {{id="rabbit",damage=3}}
+Check(manager:TriggerAction("zap"), "predicted kill sends request")
+local shotId = requests[#requests].shotId
+Check(hits == 1 and shotId > requests[1].shotId, "real client links predicted hit to increasing ID")
+visual({kind="zapResult",shotId=shotId,accepted=false,targets={}})
+Check(cancelled == 1 and corrections == 0, "real client cancels rejected death without replay")
+manager:TriggerAction("zap")
+shotId=requests[#requests].shotId
+visual({kind="zapResult",shotId=shotId,accepted=true,targets={{id="rabbit",x=0,y=0,z=-5,damage=3,isCooked=true,remainingHealth=0}}})
+Check(cancelled == 1 and corrections == 0, "matching kill ack does not duplicate sound or popup")
+manager:TriggerAction("zap")
+shotId=requests[#requests].shotId
+visual({kind="zapResult",shotId=shotId,accepted=true,targets={{id="rabbit",x=0,y=0,z=-5,damage=1,isCooked=false,remainingHealth=2}}})
+Check(cancelled == 2 and corrections == 1, "real client replaces mismatched death with actual damage")
+visual({kind="zapResult",shotId=shotId,accepted=true,targets={{id="rabbit",x=0,y=0,z=-5,damage=1,isCooked=false,remainingHealth=2}}})
+Check(corrections == 1, "duplicate ack cannot replay correction")
+manager:TriggerAction("zap")
+shotId=requests[#requests].shotId
+delayed[#delayed]()
+Check(cancelled == 3 and manager.zapPrediction.pending[shotId] == nil, "scheduled timeout clears corresponding shot")
+visual({kind="zapResult",shotId=shotId,accepted=true,targets={{id="rabbit",x=0,y=0,z=-5,damage=3,isCooked=true}}})
+Check(corrections == 1, "late result after timeout is ignored")
 print("CombatSoundTriggerRegression: " .. checks .. " checks passed")

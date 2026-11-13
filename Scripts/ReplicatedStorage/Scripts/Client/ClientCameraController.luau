@@ -5,6 +5,7 @@ local players = game:GetService("Players")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local sharedScripts = replicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
+local Paths = require(sharedScripts:WaitForChild("FarmScenePaths"))
 local FarmConfig = require(sharedScripts:WaitForChild("FarmConfig"))
 local LifecycleTool = require(sharedScripts:WaitForChild("LifecycleTool"))
 
@@ -87,7 +88,7 @@ function ClientCameraController.ResetCameraToSpawn(self: ClientCameraController)
 	if typeof(plotId) == "string" then
 		local farms = workspace:FindFirstChild("PersonalFarms")
 		local farm = if farms then farms:FindFirstChild(plotId) else nil
-		local spawn = if farm then farm:FindFirstChild("FarmSpawn") else nil
+		local spawn = if farm then Paths.Find(farm, "FarmSpawn") else nil
 		if spawn and spawn:IsA("BasePart") then
 			forwardVector = spawn.CFrame.LookVector
 		end

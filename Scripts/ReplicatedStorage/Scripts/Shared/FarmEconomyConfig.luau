@@ -51,7 +51,7 @@ export type Basket = {
 }
 export type Restaurant = {
 	id: number?, level: number?, name_t: string?, description_t: string?,
-	workers: number, speed: number, price: number, -- speed：每名服务员每秒打包重量，kg/s
+	workers: number, speed: number, price: number, -- workers：搬运人数；speed×workers 为固定打包员的 kg/s
 }
 type DataRow = { [string]: any }
 
@@ -299,7 +299,7 @@ for index, row in LoadRows("BasketData") do
 end
 assert(#baskets == 5, "Five basket tiers are required")
 Config.Baskets = baskets
--- 接单时记录单人打包速度（kg/s）；升级不追溯修改正在打包的订单，费用为金币。
+-- 配表 speed 保留基础 kg/s；固定打包员接单时按 speed×workers 保存速度快照，升级不追溯修改处理中订单。
 local restaurants: { Restaurant } = {}
 for index, row in LoadRows("RestaurantData") do
 	table.insert(restaurants, {

@@ -33,6 +33,7 @@ function node:IsA(): boolean
 end
 
 local modules: { [string]: any } = {
+ FarmScenePaths = require("../../Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths"),
 	FarmEconomyConfig = Config,
 	FarmConfig = FarmConfig,
 	FarmSaveData = Save,
@@ -67,6 +68,7 @@ local modules: { [string]: any } = {
 	},
 	FarmSoundTool = { Play = function() end },
 	ServerFarmVillageTool = {},
+ ServerPersonalRestaurant = {},
 	FarmVillageConfig = {},
 }
 

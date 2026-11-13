@@ -1,0 +1,17 @@
+{
+  "window_start_utc": "2026-11-11T21:49:35Z",
+  "window_end_utc": "2026-11-12T21:49:35Z",
+  "timezone": "Asia/Shanghai",
+  "head": "7238c748f3804a25d0ee4292ea4e108e7d5e0713",
+  "baseline": "a26e482f6cbf2f8f2d3bb0048be619f5876a7444",
+  "branch": "main",
+  "commit_count": 12,
+  "all_refs_count": 12,
+  "strict_unique_counts": {
+    "head": 2,
+    "baseline": 35
+  },
+  "diff_stat": "149 files changed, 21511 insertions(+), 2928 deletions(-)",
+  "initial_status": "clean",
+  "fetch_performed": false
+}

@@ -21,6 +21,9 @@ export type ClientFarmInfo = {
 	damage: number?,
 	waiting: number?,
 	processing: number?,
+	packed: number?,
+	carrying: number?,
+	counter: number?,
 	expectedValue: number?,
 	cash: number,
 	basketCount: number,
@@ -106,7 +109,7 @@ local FarmConfig = {
 	Actions = { zap = true, collect = true, buyZap = true, buyCollect = true, buyNest = true, buyRestaurant = true } :: { [string]: boolean },
 	AttributeNames = {
 		"FarmStage", "FarmReady", "FarmBasketWeight", "FarmBasketCapacity", "FarmDamage",
-		"FarmWaiting", "FarmProcessing", "FarmExpectedValue",
+		"FarmWaiting", "FarmProcessing", "FarmExpectedValue", "FarmPacked", "FarmCarrying", "FarmCounter",
 		"FarmConfirmId", "FarmConfirmMessage", "FarmConfirmRisk",
 		"FarmSpecies_chicken", "FarmSpecies_rabbit", "FarmSpecies_sheep", "FarmSpecies_cow", "FarmSpecies_dragon",
 		"FarmWeaponLevel", "FarmBasketTier", "FarmWeaponLevel_1", "FarmWeaponLevel_2", "FarmWeaponLevel_3", "FarmWeaponLevel_4", "FarmWeaponLevel_5",

@@ -190,7 +190,15 @@ end
 function NetMsg.ConnectRequestFarmCommand(callback: (Player, FarmRequest.Request) -> ()): RBXScriptConnection
 	local function OnCommand(player: Player, value: unknown): ()
 		local command = FarmRequest.Parse(value)
-		if command then callback(player, command) end
+		if command then
+			callback(player, command)
+		elseif type(value) == "table" then
+			local data = value :: { [string]: unknown }
+			local shotId = FarmRequest.GetShotId(data.shotId)
+			if data.action == "zap" and shotId then
+				NetMsg.FireNotifyFarmVisual(player, { kind = "zapResult", shotId = shotId, accepted = false, targets = {} })
+			end
+		end
 	end
 	return roastChickenActionEvent.OnServerEvent:Connect(OnCommand)
 end
@@ -223,10 +231,13 @@ export type VisualTarget = {
 	damage: number,
 	isCooked: boolean,
 	id: string?,
+	remainingHealth: number?,
 }
 
 export type VisualEvent = {
 	kind: string,
+	shotId: number?,
+	accepted: boolean?,
 	fromPos: { x: number, y: number, z: number }?,
 	toPos: { x: number, y: number, z: number }?,
 	tier: number?,

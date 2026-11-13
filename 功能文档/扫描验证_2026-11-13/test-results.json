@@ -1,0 +1,299 @@
+[
+  {
+    "name": "AnimationVfxRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\AnimationVfxRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "AnimationVfxRegression.log"
+  },
+  {
+    "name": "AttackVfxRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\AttackVfxRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "AttackVfxRegression.log"
+  },
+  {
+    "name": "BillboardRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\BillboardRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "BillboardRegression.log"
+  },
+  {
+    "name": "CameraSpawnRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\CameraSpawnRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "CameraSpawnRegression.log"
+  },
+  {
+    "name": "CollectorBasketRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\CollectorBasketRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "CollectorBasketRegression.log"
+  },
+  {
+    "name": "CombatSoundTriggerRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\CombatSoundTriggerRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "CombatSoundTriggerRegression.log"
+  },
+  {
+    "name": "ConfigOptimizationRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\ConfigOptimizationRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "ConfigOptimizationRegression.log"
+  },
+  {
+    "name": "CookedFoodBillboardRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\CookedFoodBillboardRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "CookedFoodBillboardRegression.log"
+  },
+  {
+    "name": "FarmBusinessRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmBusinessRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "FarmBusinessRegression.log"
+  },
+  {
+    "name": "FarmClientRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmClientRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmClientRegression.log"
+  },
+  {
+    "name": "FarmContractRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmContractRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "FarmContractRegression.log"
+  },
+  {
+    "name": "FarmEconomySnapshot",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmEconomySnapshot.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmEconomySnapshot.log"
+  },
+  {
+    "name": "FarmHatchRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmHatchRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "FarmHatchRegression.log"
+  },
+  {
+    "name": "FarmProgressRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmProgressRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "FarmProgressRegression.log"
+  },
+  {
+    "name": "FarmToolbarRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmToolbarRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "FarmToolbarRegression.log"
+  },
+  {
+    "name": "FarmUIRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmUIRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmUIRegression.log"
+  },
+  {
+    "name": "FarmVillageClientRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmVillageClientRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmVillageClientRegression.log"
+  },
+  {
+    "name": "FarmVillageRuntimeRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmVillageRuntimeRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmVillageRuntimeRegression.log"
+  },
+  {
+    "name": "FarmVillageStaticAudit",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\FarmVillageStaticAudit.luau"
+    ],
+    "exit_code": 1,
+    "log": "FarmVillageStaticAudit.log"
+  },
+  {
+    "name": "PersonalFarmRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\PersonalFarmRegression.luau"
+    ],
+    "exit_code": 1,
+    "log": "PersonalFarmRegression.log"
+  },
+  {
+    "name": "SoundPoolRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\SoundPoolRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "SoundPoolRegression.log"
+  },
+  {
+    "name": "SpeciesSwitchRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\SpeciesSwitchRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "SpeciesSwitchRegression.log"
+  },
+  {
+    "name": "TextFittingFontFaceRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\TextFittingFontFaceRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "TextFittingFontFaceRegression.log"
+  },
+  {
+    "name": "WeaponToolRegression",
+    "command": [
+      "lune",
+      "run",
+      "C:\\Users\\herong\\Desktop\\work\\Chicken\\Tools\\Tests\\WeaponToolRegression.luau"
+    ],
+    "exit_code": 0,
+    "log": "WeaponToolRegression.log"
+  },
+  {
+    "name": "audio-python",
+    "command": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "Tools/Tests",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "log": "audio-python.log"
+  },
+  {
+    "name": "obs-python",
+    "command": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "Tools/Studio",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "log": "obs-python.log"
+  },
+  {
+    "name": "layout-python",
+    "command": [
+      "python",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "Tools/UI",
+      "-p",
+      "test_*.py"
+    ],
+    "exit_code": 0,
+    "log": "layout-python.log"
+  },
+  {
+    "name": "diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "a26e482",
+      "7238c748"
+    ],
+    "exit_code": 2,
+    "log": "diff-check.log"
+  }
+]

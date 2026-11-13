@@ -4,17 +4,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
 local Config = require(Shared:WaitForChild("FarmVillageConfig"))
 local Texts = require(Shared:WaitForChild("GameTexts"))
+local Paths = require(Shared:WaitForChild("FarmScenePaths"))
 local Tool = {}
-local RuntimeFolders = { "Eggs", "LiveAnimals", "CookedFood" }
-
 function Tool.Reset(map: Folder): ()
-	for _, name in RuntimeFolders do
-		local folder = map:FindFirstChild(name)
-		if folder then folder:Destroy() end
-	end
-	local restaurant = map:FindFirstChild("Restaurant")
-	local workers = if restaurant then restaurant:FindFirstChild("Workers") else nil
-	if workers then workers:Destroy() end
+ local runtime = Paths.Find(map, "Runtime")
+ if runtime then runtime:Destroy() end
 	map:SetAttribute("OwnerUserId", nil)
 	map:SetAttribute("Occupied", false)
 	for _, object in map:GetDescendants() do
@@ -25,7 +19,7 @@ function Tool.Reset(map: Folder): ()
 			object:SetAttribute("FarmText", nil)
 		end
 	end
-	local sign = map:FindFirstChild("OwnerSign")
+	local sign = Paths.Find(map, "OwnerSign")
 	if sign and sign:IsA("BasePart") then sign:SetAttribute("FarmText", Texts.Farm.VillageVacant.source:format(tostring(map:GetAttribute("FarmId")))) end
 end
 
@@ -50,7 +44,7 @@ function Tool.Claim(map: Folder, plot: BasePart, player: Player, reservations: {
 	map:SetAttribute("OwnerUserId", player.UserId)
 	map:SetAttribute("Occupied", true)
 	for _, object in map:GetDescendants() do if object:IsA("BasePart") then object:SetAttribute("OwnerUserId", player.UserId) end end
-	local sign = map:FindFirstChild("OwnerSign")
+	local sign = Paths.Find(map, "OwnerSign")
 	if sign and sign:IsA("BasePart") then sign:SetAttribute("FarmText", Texts.Farm.VillageOwner.source:format(plot.Name, player.DisplayName)) end
 	return true
 end
@@ -69,9 +63,11 @@ function Tool.Validate(plots: Instance, farms: Instance): ()
 		local plot, map = plots:FindFirstChild(name), farms:FindFirstChild(name)
 		assert(plot and plot:IsA("BasePart") and map and map:IsA("Folder"), "Missing village plot " .. name)
 		assert(map:GetAttribute("FarmId") == name, "Village FarmId mismatch: " .. name)
-		assert(map:FindFirstChild("FarmSpawn") and map:FindFirstChild("Sell") and map:FindFirstChild("OwnerSign"), "Missing farm anchors: " .. name)
-		local nest, restaurant = map:FindFirstChild("Nest"), map:FindFirstChild("Restaurant")
-		assert(nest and nest:FindFirstChild("Chute") and restaurant and restaurant:FindFirstChild("QueueHead") and restaurant:FindFirstChild("QueueStart"), "Missing business anchors: " .. name)
+  for key in Paths.StaticPaths do
+   if key ~= "Runtime" and key ~= "Eggs" and key ~= "LiveAnimals" and key ~= "CookedFood" and key ~= "RestaurantRuntime" then
+    Paths.Require(map, key)
+   end
+  end
 	end
 end
 return Tool

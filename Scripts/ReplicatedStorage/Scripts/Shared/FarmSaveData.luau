@@ -29,10 +29,14 @@ export type FarmSave = {
 	restaurantLevel: number,
 	basket: { Cargo },
 	kitchen: { Order },
+	packed: { Cargo },
+	playerCarry: { Cargo },
+	workerCarry: { [string]: { Cargo } },
+	counter: { Cargo },
 }
 
 local FarmSaveData = {}
-FarmSaveData.Version = 1 -- 独立经营结构版本，与通用玩家档的 dataVersion 分开
+FarmSaveData.Version = 2 -- 独立经营结构版本，与通用玩家档的 dataVersion 分开
 local SpeciesIds = { chicken = true, rabbit = true, sheep = true, cow = true, dragon = true }
 local QualityIds = { normal = true, golden = true, rainbow = true, giant = true }
 
@@ -124,6 +128,10 @@ function FarmSaveData.CreateDefault(overrideInitialValues: { [string]: any }?): 
 		restaurantLevel = if type(initial.RestaurantLevel) == "number" and initial.RestaurantLevel >= 1 and initial.RestaurantLevel <= 5 then initial.RestaurantLevel else 1,
 		basket = {}, -- 入筐后停止地面过期，保留生成时的重量与售价
 		kitchen = {}, -- FIFO；处理中剩余秒数离线暂停，禁止保存 os.clock 绝对值
+		packed = {}, -- 打包台旁等待整批搬运的成品
+		playerCarry = {}, -- 玩家独立携带，不占鸡筐重量
+		workerCarry = { ["1"] = {}, ["2"] = {} }, -- 服务员携带货物，持久化使用字符串键
+		counter = {}, -- 前台 FIFO 库存，顾客购买后才入账
 	}
 end
 
@@ -163,6 +171,7 @@ function FarmSaveData.Validate(value: unknown): (boolean, string?)
 	for _, cargo in farm.basket :: { unknown } do
 		if not ValidateCargo(cargo, seen) then return false, "invalid or duplicate basket cargo" end
 	end
+	local processingCount = 0
 	for _, valueOrder in farm.kitchen :: { unknown } do
 		if type(valueOrder) ~= "table" then return false, "invalid order" end
 		local order = valueOrder :: { [string]: unknown }
@@ -172,10 +181,27 @@ function FarmSaveData.Validate(value: unknown): (boolean, string?)
 		if order.state == "Waiting" then
 			if remaining ~= 0 or duration ~= 0 or speed ~= 0 then return false, "waiting order has processing snapshot" end
 		elseif order.state == "Processing" then
+			processingCount += 1
+			if processingCount > 1 then return false, "multiple packer orders" end
 			if remaining < 0 or duration <= 0 or remaining > duration or speed <= 0 then return false, "invalid processing snapshot" end
 		else
 			return false, "invalid order state"
 		end
+	end
+	if type(farm.workerCarry) ~= "table" then return false, "invalid worker cargo" end
+	local workers = farm.workerCarry :: { [string]: unknown }
+	for key in workers do
+		if key ~= "1" and key ~= "2" then return false, "invalid worker key" end
+	end
+	for _, queue in { farm.packed, farm.playerCarry, workers["1"], workers["2"], farm.counter } do
+		if not IsList(queue) then return false, "invalid package queue" end
+		for _, cargo in queue :: { unknown } do
+			if not ValidateCargo(cargo, seen) then return false, "invalid or duplicate package" end
+		end
+	end
+	-- 显式校验每个容器，避免 nil 令数组遍历提前结束。
+	if not IsList(farm.packed) or not IsList(farm.playerCarry) or not IsList(workers["1"]) or not IsList(workers["2"]) or not IsList(farm.counter) then
+		return false, "missing package queue"
 	end
 	return true, nil
 end
@@ -194,6 +220,9 @@ function FarmSaveData.Copy(farm: FarmSave): FarmSave
 			cargo = CopyCargo(order.cargo), state = order.state, remainingSeconds = order.remainingSeconds,
 			speedSnapshot = order.speedSnapshot, durationSnapshot = order.durationSnapshot,
 		})
+	end
+	for _, pair in { { farm.packed, result.packed }, { farm.playerCarry, result.playerCarry }, { farm.counter, result.counter }, { farm.workerCarry["1"], result.workerCarry["1"] }, { farm.workerCarry["2"], result.workerCarry["2"] } } do
+		for _, cargo in pair[1] do table.insert(pair[2], CopyCargo(cargo)) end
 	end
 	return result
 end

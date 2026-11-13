@@ -54,7 +54,8 @@ local villageConfig = luau.load(fs.readFile('Scripts/ReplicatedStorage/Scripts/S
 local node = {}
 function node:WaitForChild(name) return (name == 'Scripts' or name == 'Shared') and self or name end
 local villageModules = {
-	FarmVillageConfig = villageConfig,
+	FarmScenePaths = luau.load(fs.readFile("Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths.luau"))(),
+ FarmVillageConfig = villageConfig,
 	GameTexts = { Farm = { VillageVacant = { source = '%s · Vacant farm' }, VillageOwner = { source = "%s · %s's farm" } } }
 }
 local villageEnv = { game = { GetService = function() return node end }, require = function(name) return assert(villageModules[name], name) end }
@@ -67,7 +68,8 @@ local ownerSign = Instance.new("Part")
 ownerSign.Name = "OwnerSign"
 ownerSign:SetAttribute("FarmSign", "FarmOwnerSignGui")
 ownerSign:SetAttribute("FarmSignAudience", "Public")
-ownerSign.Parent = farmMap
+local anchors = Instance.new("Folder"); anchors.Name = "Anchors"; anchors.Parent = farmMap
+ownerSign.Parent = anchors
 
 local nestSign = Instance.new("Part")
 nestSign.Name = "ProductionSign"

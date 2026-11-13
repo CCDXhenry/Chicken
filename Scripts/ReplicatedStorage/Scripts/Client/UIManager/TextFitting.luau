@@ -22,9 +22,12 @@ type TextFitCache = {
 	fontFace: Font,
 	designSize: number,
 	fittedSize: number,
+	minimum: number,
+	measuredText: string,
 }
 
 local textFitCache: { [TextLabel]: TextFitCache } = setmetatable({}, { __mode = "k" }) :: any
+local fitVersions: { [TextLabel]: number } = setmetatable({}, { __mode = "k" }) :: any
 
 local function AncestorScale(label: GuiObject): number
 	local scale = 1
@@ -106,7 +109,14 @@ function TextFitting.CalculateFittedFontSize(
 		local bounds: Vector2
 		if parameters then
 			parameters.Size = candidate
-			bounds = TextService:GetTextBoundsAsync(parameters)
+			local ok, result = pcall(function(): Vector2
+				return TextService:GetTextBoundsAsync(parameters :: GetTextBoundsParams)
+			end)
+			if not ok then
+				parameters:Destroy()
+				error(result)
+			end
+			bounds = result
 		else
 			bounds = TextService:GetTextSize(text, candidate, font, measureBound)
 		end
@@ -123,6 +133,8 @@ end
 
 -- 单行文字关闭原生缩放和换行，先缩进设计框，再由根 UIScale 整体缩放
 function TextFitting.FitTextLabel(label: TextLabel, options: TextFitOptions?): number
+	local version = (fitVersions[label] or 0) + 1
+	fitVersions[label] = version
 	label.TextScaled = false
 	label.TextWrapped = false
 	local previous = textFitCache[label]
@@ -141,6 +153,10 @@ function TextFitting.FitTextLabel(label: TextLabel, options: TextFitOptions?): n
 	end
 	local padding = if options ~= nil and typeof(options.padding) == "Vector2" then options.padding else TextFitPadding
 	local availableSize = DesignBox(label, padding)
+	local minimum = if options ~= nil and options.minSize ~= nil then options.minSize else TextFitMinimumSize
+	local text, font, fontFace = label.Text, label.Font, label.FontFace
+	local parent = label.Parent
+	local measuredText = PlainText(label, options)
 	if
 		previous ~= nil
 		and previous.text == label.Text
@@ -148,27 +164,36 @@ function TextFitting.FitTextLabel(label: TextLabel, options: TextFitOptions?): n
 		and previous.font == label.Font
 		and previous.fontFace == label.FontFace
 		and previous.designSize == designSize
+		and previous.minimum == minimum
+		and previous.measuredText == measuredText
 	then
 		label.TextSize = previous.fittedSize
 		return previous.fittedSize
 	end
-	local minimum = if options ~= nil then options.minSize else TextFitMinimumSize
 	local fittedSize = TextFitting.CalculateFittedFontSize(
-		PlainText(label, options),
+		measuredText,
 		availableSize,
-		label.Font,
+		font,
 		designSize,
 		minimum,
-		label.FontFace
+		fontFace
 	)
+	-- 测量可能让出执行权；旧请求只能读取当前字号，不能写回或污染新文案缓存。
+	if fitVersions[label] ~= version or label.Parent ~= parent or label.Text ~= text or label.Font ~= font or label.FontFace ~= fontFace
+		or label:GetAttribute("DesignTextSize") ~= configuredDesign or DesignBox(label, padding) ~= availableSize
+		or PlainText(label, options) ~= measuredText then
+		return label.TextSize
+	end
 	label.TextSize = fittedSize
 	textFitCache[label] = {
-		text = label.Text,
+		text = text,
 		boxSize = availableSize,
 		font = label.Font,
 		fontFace = label.FontFace,
 		designSize = designSize,
 		fittedSize = fittedSize,
+		minimum = minimum,
+		measuredText = measuredText,
 	}
 	return fittedSize
 end

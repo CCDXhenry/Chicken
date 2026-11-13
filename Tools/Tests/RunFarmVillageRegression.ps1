@@ -10,7 +10,8 @@ local Instance = roblox.Instance
 local config = luau.load(fs.readFile('Scripts/ReplicatedStorage/Scripts/Shared/FarmVillageConfig.luau'))()
 local node = {}
 function node:WaitForChild(name) return (name=='Scripts' or name=='Shared') and self or name end
-local modules = {FarmVillageConfig=config,GameTexts={Farm={VillageVacant={source='%s · Vacant farm'},VillageOwner={source="%s · %s's farm"}}}}
+local paths=luau.load(fs.readFile("Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths.luau"),{environment={Instance=Instance}})()
+local modules = {FarmScenePaths=paths,FarmVillageConfig=config,GameTexts={Farm={VillageVacant={source='%s · Vacant farm'},VillageOwner={source="%s · %s's farm"}}}}
 local env={game={GetService=function() return node end},require=function(name) return assert(modules[name],name) end}
 local tool=luau.load(fs.readFile('Scripts/ServerStorage/Scripts/ServerFarmVillageTool.luau'),{environment=env})()
 local function Make(class,name,parent)
@@ -24,10 +25,17 @@ for i=1,8 do
  local id=string.format('Plot%02d',i)
  local plot=Make('Part',id,plots)
  local map=Make('Folder',id,farms); map:SetAttribute('FarmId',id)
- Make('Part','FarmSpawn',map); Make('Part','Sell',map)
- local sign=Make('Part','OwnerSign',map); sign:SetAttribute('FarmSign','FarmOwnerSignGui'); sign:SetAttribute('FarmSignAudience','Public')
- Make('Part','Chute',Make('Folder','Nest',map))
- local restaurant=Make('Folder','Restaurant',map); Make('Part','QueueHead',restaurant); Make('Part','QueueStart',restaurant)
+ for key,segments in paths.StaticPaths do
+  if segments[1] ~= 'Runtime' then
+   local parent=map
+   for index,name in segments do
+    local child=parent:FindFirstChild(name)
+    if not child then child=Make(if index==#segments and key~='Nest' and key~='HatchField' and key~='Restaurant' and key~='RestaurantAnchors' then 'Part' else 'Folder',name,parent) end
+    parent=child
+   end
+  end
+ end
+ local sign=paths.Require(map,'OwnerSign'); sign:SetAttribute('FarmSign','FarmOwnerSignGui'); sign:SetAttribute('FarmSignAudience','Public')
  owners[i]={UserId=i,DisplayName='Owner'..i}
 end
 tool.Validate(plots,farms); Check(true,'eight valid prebuilt plots')
@@ -36,21 +44,24 @@ for i=1,8 do
  local plot,map=tool.FindAvailable(plots,farms,reservations)
  Check(plot.Name==string.format('Plot%02d',i),'lowest free ID')
  Check(tool.Claim(map,plot,owners[i],reservations),'claim unique plot')
- Check(map:GetAttribute('OwnerUserId')==i and map:GetAttribute('Occupied') and map.Sell:GetAttribute('OwnerUserId')==i,'ownership projected')
+ Check(map:GetAttribute('OwnerUserId')==i and map:GetAttribute('Occupied') and paths.Require(map,'Sell'):GetAttribute('OwnerUserId')==i,'ownership projected')
 end
 local plot,map=tool.FindAvailable(plots,farms,reservations)
 Check(plot==nil and map==nil,'full village waits')
 local first=farms.Plot01
 Check(not tool.Claim(first,plots.Plot01,owners[1],reservations),'duplicate load cannot claim twice')
 Check(not tool.Release(first,plots.Plot01,owners[2],reservations),'foreign release refused')
-Make('Part','Egg',Make('Folder','Eggs',first))
-Make('Folder','LiveAnimals',first); Make('Folder','CookedFood',first); Make('Model','Worker',Make('Folder','Workers',first.Restaurant))
-first.Sell:SetAttribute('FarmSign','RestaurantSignGui')
+Make('Part','Egg',paths.EnsureRuntime(first,'Eggs'))
+local runtime=paths.EnsureRuntime(first,'RestaurantRuntime')
+Make('Folder','PackedDisplay',runtime); Make('Folder','CounterDisplay',runtime)
+paths.EnsureRuntime(first,'LiveAnimals'); paths.EnsureRuntime(first,'CookedFood'); Make('Model','Worker',runtime)
+paths.Require(first,'Sell'):SetAttribute('FarmSign','RestaurantSignGui')
 Check(tool.Release(first,plots.Plot01,owners[1],reservations),'owner release')
-Check(first.Parent==farms and first.FarmSpawn.Parent==first,'static building retained')
-Check(not first:FindFirstChild('Eggs') and not first:FindFirstChild('LiveAnimals') and not first:FindFirstChild('CookedFood') and not first.Restaurant:FindFirstChild('Workers'),'runtime objects cleared')
-Check(first:GetAttribute('OwnerUserId')==nil and first.Sell:GetAttribute('OwnerUserId')==nil and first.Sell:GetAttribute('FarmSign')==nil,'private state cleared')
-Check(first.OwnerSign:GetAttribute('FarmSign')=='FarmOwnerSignGui' and first.OwnerSign:GetAttribute('FarmText')=='Plot01 · Vacant farm','public vacancy sign restored')
+Check(first.Parent==farms and paths.Require(first,'FarmSpawn').Parent==first.Anchors,'static building retained')
+Check(not first:FindFirstChild('Runtime'),'runtime objects cleared')
+Check(not paths.Find(first,'RestaurantRuntime'),'restaurant actors and package projections cleared')
+Check(first:GetAttribute('OwnerUserId')==nil and paths.Require(first,'Sell'):GetAttribute('OwnerUserId')==nil and paths.Require(first,'Sell'):GetAttribute('FarmSign')==nil,'private state cleared')
+Check(paths.Require(first,'OwnerSign'):GetAttribute('FarmSign')=='FarmOwnerSignGui' and paths.Require(first,'OwnerSign'):GetAttribute('FarmText')=='Plot01 · Vacant farm','public vacancy sign restored')
 Check(farms.Plot02:GetAttribute('OwnerUserId')==2,'neighbor unaffected')
 local nextOwner={UserId=9,DisplayName='Next'}
 plot,map=tool.FindAvailable(plots,farms,reservations)

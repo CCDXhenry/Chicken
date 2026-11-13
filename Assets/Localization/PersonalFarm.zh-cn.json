@@ -1,5 +1,18 @@
 {
   "dynamic": {
+    "FarmRestaurantStock": "等待 {1} · 打包 {2} · 待搬 {3} · 搬运 {4} · 前台 {5} · 预计 {6}",
+    "FarmRestaurantBoard": "等待 {1} · 打包 {2}\n待搬 {3} · 搬运 {4} · 前台 {5}\n未售价值 {6}",
+    "FarmPackerWorking": "打包员 · 还需 {1}秒",
+    "FarmPackerIdle": "打包员 · 空闲",
+    "FarmPackagesReady": "待搬运 · {1}份",
+    "FarmPackagesCounter": "前台 {1}份 · 顾客 {2}位",
+    "FarmPackageCarried": "携带 {1}份成品",
+    "FarmTransportIdle": "服务员 {1} · 待命 · {2}份",
+    "FarmTransportPickup": "服务员 {1} · 前往取货 · {2}份",
+    "FarmTransportDrop": "服务员 {1} · 送往前台 · {2}份",
+    "FarmTransportReturn": "服务员 {1} · 返回 · {2}份",
+    "FarmUITransportWorkers": "{1}名服务员 / 1名打包员 / {2} kg/s",
+    "FarmLoopHint": "交货 → 打包 → 搬到前台 → 顾客购买",
     "FarmVillageVacant": "{1} · 空置农场",
     "FarmVillageOwner": "{1} · {2}的农场",
 	"FarmPersonalSold": "售出 {1}份 · +{2}金币",
@@ -34,6 +47,10 @@
     "FarmWorkerIdle": "服务员 {1} · 空闲"
   },
   "static": {
+    "Take all": "全部取走",
+    "Packed food": "打包成品",
+    "Packing table\nDeliver food here": "打包台\n在此交付食材",
+    "Kitchen entrance\nDeliver food at the packing table": "后厨入口\n请到打包台交付食材",
 	"Yellow Chicken": "小黄鸡",
 	"Flying Rabbit": "飞天兔",
 	"Woolly Sheep": "卷毛羊",

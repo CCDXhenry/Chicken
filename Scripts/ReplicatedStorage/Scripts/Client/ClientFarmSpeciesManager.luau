@@ -6,6 +6,8 @@ local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local Shared = Storage.Scripts.Shared
 local Rules = require(Shared.FarmUIConfig)
+local FarmConfig = require(Shared.FarmConfig)
+local NetMsg = require(Shared.NetMsg)
 local HatchController = require(script.Parent.ClientHatchController)
 local Lifecycle = require(Shared.LifecycleTool)
 local Info = require(script.Parent.ClientGameInfo)
@@ -39,6 +41,14 @@ local function InRange(part: BasePart): boolean
 	local range = part:GetAttribute("FarmUIRange")
 	return part:IsDescendantOf(workspace) and part:GetAttribute("OwnerUserId") == Players.LocalPlayer.UserId and root ~= nil and root:IsA("BasePart") and (root.Position - part.Position).Magnitude <= (if typeof(range) == "number" then range else 10)
 end
+local function CanTakePackages(part: BasePart): boolean
+	if not InRange(part) or (Info.GetFarmInfo().packed or 0) == 0 then return false end
+	local character = Players.LocalPlayer.Character
+	local root = if character then character:FindFirstChild("HumanoidRootPart") else nil
+	if not root or not root:IsA("BasePart") then return false end
+	local point = part.CFrame:PointToObjectSpace(root.Position)
+	return math.abs(point.X) <= part.Size.X / 2 and math.abs(point.Z) <= part.Size.Z / 2 and math.abs(point.Y) < FarmConfig.ZoneHeightTolerance
+end
 local function ClearPrompt(self: ClientFarmSpeciesManager, part: BasePart): ()
 	local prompt = self.prompts[part]
 	if prompt then
@@ -61,7 +71,7 @@ local function BindPrompt(self: ClientFarmSpeciesManager, part: BasePart): ()
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.Name = "FarmInteractionPrompt"
-	prompt.KeyboardKeyCode = Enum.KeyCode.R
+	prompt.KeyboardKeyCode = if id == "PackagePickup" then Enum.KeyCode.E else Enum.KeyCode.R
 	prompt.Style = Enum.ProximityPromptStyle.Default
 	prompt.HoldDuration = 0
 	prompt.ClickablePrompt = true
@@ -73,7 +83,11 @@ local function BindPrompt(self: ClientFarmSpeciesManager, part: BasePart): ()
 
 	if self.mapScope then
 		self.mapScope:Connect(prompt.Triggered:Connect(function()
-			self:Open(id, part)
+			if id == "PackagePickup" then
+				if not UIManager.HasShowingWindow() and not GuiService.MenuIsOpen and not Input:GetFocusedTextBox() and CanTakePackages(part) then
+					NetMsg.FireRequestFarmCommand({ action = "takePackages" })
+				end
+			else self:Open(id, part) end
 		end))
 	end
 
@@ -82,8 +96,8 @@ local function BindPrompt(self: ClientFarmSpeciesManager, part: BasePart): ()
 end
 local function UpdatePrompts(self: ClientFarmSpeciesManager): ()
 	local free = not UIManager.HasShowingWindow() and Info.GetFarmInfo().ready == true and not GuiService.MenuIsOpen
-	for _, prompt in self.prompts do
-		prompt.Enabled = free
+	for part, prompt in self.prompts do
+		prompt.Enabled = free and (part:GetAttribute("FarmUIEntry") ~= "PackagePickup" or CanTakePackages(part))
 	end
 end
 function Manager.new(): ClientFarmSpeciesManager

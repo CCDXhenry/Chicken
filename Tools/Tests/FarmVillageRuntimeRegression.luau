@@ -1,5 +1,6 @@
 -- 八人常驻村落运行回归：仅在双人 Play 服务端验证归属、参观、旋转、重生与回收
 --!strict
+local Paths = require(game.ReplicatedStorage.Scripts.Shared.FarmScenePaths)
 local RunService = game:GetService("RunService")
 assert(RunService:IsRunning() and RunService:IsServer(), "Play server only")
 local Players = game:GetService("Players")
@@ -33,13 +34,13 @@ local success,failure=xpcall(function(): boolean
  Check(first.map:GetAttribute("OwnerUserId")==first.owner.UserId and second.map:GetAttribute("OwnerUserId")==second.owner.UserId,"Unique live ownership on opposite road sides")
  Check(first.plot.CFrame.RightVector:Dot(second.plot.CFrame.RightVector)<-0.99,"Opposite farm orientation")
  for _,session in {first,second} do
-  local spawn=session.map:FindFirstChild("FarmSpawn") :: BasePart
+  local spawn=Paths.Find(session.map, "FarmSpawn") :: BasePart
   local localSpawn=session.plot.CFrame:PointToObjectSpace(spawn.Position)
   Check((localSpawn-Vector3.new(0,0.45,16)).Magnitude<0.01,"Rotated local spawn anchor: "..session.plot.Name)
   session.owner:SetAttribute("FarmPlotId",session.plot.Name)
  end
  -- 不修改存档，仅把携带货物的玩家置于邻居交货区；业务只读取其自家 Sell。
- local sell=second.map:FindFirstChild("Sell") :: BasePart
+ local sell=Paths.Find(second.map, "Sell") :: BasePart
  local basketCount,cash=#first.farm.basket,first.farm.cash
  Root(first.owner).CFrame=sell.CFrame*CFrame.new(0,3,0)
  local unload=first.nextUnloadAt
@@ -57,9 +58,9 @@ local success,failure=xpcall(function(): boolean
  local neighborMap=second.map
  active:RemovePlayer(player)
  Check(map.Parent==workspace.PersonalFarms and map:GetAttribute("OwnerUserId")==nil,"Release preserves static farm and clears owner")
- Check(not map:FindFirstChild("Eggs") and not map:FindFirstChild("LiveAnimals") and not map:FindFirstChild("CookedFood"),"Release removes all production and ground entities")
- local restaurant,sign=map:FindFirstChild("Restaurant"),map:FindFirstChild("OwnerSign")
- Check(restaurant~=nil and not restaurant:FindFirstChild("Workers") and sign~=nil and sign:GetAttribute("FarmText")==plot.Name.." · Vacant farm","Vacancy restores public sign and removes workers")
+ Check(not Paths.Find(map, "Eggs") and not Paths.Find(map, "LiveAnimals") and not Paths.Find(map, "CookedFood"),"Release removes all production and ground entities")
+ local restaurant,sign=map:FindFirstChild("Restaurant"),Paths.Find(map, "OwnerSign")
+ Check(restaurant~=nil and not Paths.Find(map, "Runtime") and sign~=nil and sign:GetAttribute("FarmText")==plot.Name.." · Vacant farm","Vacancy restores public sign and removes workers")
  Check(active.sessions[second.owner]==second and neighborMap:GetAttribute("OwnerUserId")==second.owner.UserId,"Neighbor session survives release")
  active:OnPlayerLoaded(player)
  local restored=active.sessions[player]

@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Scripts"):WaitForChild("Shared")
+local Paths = require(Shared:WaitForChild("FarmScenePaths"))
 local FarmConfig = require(Shared:WaitForChild("FarmConfig"))
 local Economy = require(Shared:WaitForChild("FarmEconomyConfig"))
 local Texts = require(Shared:WaitForChild("GameTexts"))
@@ -538,7 +539,7 @@ function FarmVisualEffects.TriggerScreenImpact(self: VfxManager, shakeIntensity:
 	end
 end
 
-function FarmVisualEffects.SpawnFloatingText(self: VfxManager, pos: Vector3, text: string, color: Color3?, strokeColor: Color3?, scaleMultiplier: number?): ()
+function FarmVisualEffects.SpawnFloatingText(self: VfxManager, pos: Vector3, text: string, color: Color3?, strokeColor: Color3?, scaleMultiplier: number?): () -> ()
 	local slot: DamageLabelSlot? = nil
 	for _, s in self.damagePool do
 		if not s.active then
@@ -629,6 +630,10 @@ function FarmVisualEffects.SpawnFloatingText(self: VfxManager, pos: Vector3, tex
 			HideLabel(slot)
 		end
 	end)
+	-- 槽位复用后，旧攻击的回执不能撤销新提示。
+	return function(): ()
+		if slot.generation == generation then HideLabel(slot) end
+	end
 end
 
 function FarmVisualEffects.PlayMuzzle(self: VfxManager, tier: number, _fromPos: Vector3, _zapColor: Color3): ()
@@ -703,7 +708,7 @@ function FarmVisualEffects.CreateLightningSegment(self: VfxManager, from: Vector
 	UpdateArc(arc, origin)
 end
 
-function FarmVisualEffects.CreateHitImpact(self: VfxManager, pos: Vector3, damage: number, isCooked: boolean, _tier: number): ()
+function FarmVisualEffects.CreateHitImpact(self: VfxManager, pos: Vector3, damage: number, isCooked: boolean, _tier: number): () -> ()
 	local slot = Acquire(self.hitPool)
 	if slot then
 		slot.model:PivotTo(CFrame.new(pos))
@@ -711,21 +716,23 @@ function FarmVisualEffects.CreateHitImpact(self: VfxManager, pos: Vector3, damag
 		slot.expiresAt = os.clock() + SparkDuration
 	end
 
+	local cancel: () -> ()
 	if isCooked then
-		self:SpawnFloatingText(pos + Vector3.yAxis * 0.9, Texts.Farm.KnockoutLoot.source, Color3.fromRGB(255, 215, 0), Color3.fromRGB(60, 25, 0), 1.2)
+		cancel = self:SpawnFloatingText(pos + Vector3.yAxis * 0.9, Texts.Farm.KnockoutLoot.source, Color3.fromRGB(255, 215, 0), Color3.fromRGB(60, 25, 0), 1.2)
 		FarmSoundTool.Play("AnimalCooked", pos)
 	else
-		self:SpawnFloatingText(pos, "-" .. tostring(damage), Color3.fromRGB(255, 200, 60), Color3.fromRGB(40, 10, 0), 1.0)
+		cancel = self:SpawnFloatingText(pos, "-" .. tostring(damage), Color3.fromRGB(255, 200, 60), Color3.fromRGB(40, 10, 0), 1.0)
 		FarmSoundTool.Play("AnimalHit", pos)
 	end
+	return cancel
 end
 
 function FarmVisualEffects.PlayZapEffects(
 	self: VfxManager,
 	tier: number,
 	_fromPos: Vector3,
-	targets: { { x: number, y: number, z: number, damage: number, isCooked: boolean, id: string? } }
-): ()
+	targets: { { x: number, y: number, z: number, damage: number, isCooked: boolean, id: string?, remainingHealth: number? } }
+): { [string]: () -> () }
 	local clampedTier = math.clamp(tier, 1, 5)
 	local weapon = Economy.Weapons[clampedTier]
 	local mode = if weapon then weapon.mode else "single"
@@ -733,8 +740,9 @@ function FarmVisualEffects.PlayZapEffects(
 	local zapColor = Color3.fromHex(colorHex)
 	-- 攻击起点读取已装备电击枪预制枪口的实时世界坐标
 	local liveFrom = GetLiveZapOrigin()
+	local cancellations: { [string]: () -> () } = {}
 	if not self.initialized or not liveFrom then
-		return
+		return cancellations
 	end
 
 	self:PlayMuzzle(clampedTier, liveFrom, zapColor)
@@ -751,8 +759,10 @@ function FarmVisualEffects.PlayZapEffects(
 		end
 		self:CreateLightningSegment(segmentStart, targetPos, zapColor, clampedTier, followMuzzle)
 		previous = targetPos
-		self:CreateHitImpact(targetPos, target.damage, target.isCooked, clampedTier)
+		local cancel = self:CreateHitImpact(targetPos, target.damage, target.isCooked, clampedTier)
+		if target.id then cancellations[target.id] = cancel end
 	end
+	return cancellations
 end
 
 function FarmVisualEffects.PlayZapMiss(self: VfxManager, tier: number, aim: Vector3): ()
@@ -857,7 +867,7 @@ local function GetCookedFolder(): Folder?
 	end
 	local farms = workspace:FindFirstChild("PersonalFarms")
 	local plot = if farms then farms:FindFirstChild(plotId) else nil
-	local folder = if plot then plot:FindFirstChild("CookedFood") else nil
+	local folder = if plot then Paths.Find(plot, "CookedFood") else nil
 	if folder and folder:IsA("Folder") then
 		return folder
 	end

@@ -214,7 +214,9 @@ local mockEnv = {
 	typeof = typeof,
 	setmetatable = setmetatable,
 	require = function(target: any)
-		if typeof(target) == "table" and target.Name == "FarmConfig" then
+		if typeof(target) == "table" and target.Name == "FarmScenePaths" then
+   return require("../../Scripts/ReplicatedStorage/Scripts/Shared/FarmScenePaths")
+  elseif typeof(target) == "table" and target.Name == "FarmConfig" then
 			return FarmConfig
 		elseif typeof(target) == "table" and target.Name == "LifecycleTool" then
 			return LifecycleTool

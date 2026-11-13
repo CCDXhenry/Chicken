@@ -4,12 +4,13 @@ local Config = if script then require(script.Parent:WaitForChild("FarmEconomyCon
 export type Candidate = { id: string, x: number, y: number, z: number, health: number }
 export type OrderedTarget = { id: string, health: number }
 export type Hit = { id: string, damage: number }
+local ServerDistanceTolerance = 4
 local Rules = {}
 local function Distance(a: Candidate, x: number, y: number, z: number): number
 	return math.sqrt((a.x - x)^2 + (a.y - y)^2 + (a.z - z)^2)
 end
 
--- 按调用方已经排好的顺序结算。不读取坐标，服务端因此不会用距离或射界改写客户端目标。
+-- 按调用方已经排好的顺序结算；服务端须先调用 ValidateOrderedTargets 校验空间合法性。
 function Rules.ApplyOrderedHits(tier: number, level: number, ordered: { OrderedTarget }): { Hit }
 	local weapon = Config.Weapons[tier]
 	local budget = Config.GetDamage(tier, level)
@@ -53,6 +54,24 @@ function Rules.ApplyOrderedHits(tier: number, level: number, ordered: { OrderedT
 		end
 	end
 	return hits
+end
+
+-- 服务端仅宽松检查距离与目标顺序；射界由客户端选标，容差不改变客户端射程。
+function Rules.ValidateOrderedTargets(tier: number, x: number, y: number, z: number, _directionX: number?, _directionZ: number?, ordered: { Candidate }): boolean
+	local weapon = Config.Weapons[tier]
+	if not weapon or #ordered > weapon.maximumTargets then return false end
+	local seen: { [string]: boolean } = {}
+	for index, target in ordered do
+		if seen[target.id] or target.health <= 0 then return false end
+		seen[target.id] = true
+		if weapon.mode == "chain" and index > 1 then
+			local previous = ordered[index - 1]
+			if not (Distance(target, previous.x, previous.y, previous.z) <= weapon.chainRange + ServerDistanceTolerance) then return false end
+		elseif not (Distance(target, x, y, z) <= weapon.range + ServerDistanceTolerance) then
+			return false
+		end
+	end
+	return true
 end
 
 function Rules.ResolveShot(tier: number, level: number, x: number, y: number, z: number, directionX: number?, directionZ: number?, candidates: { Candidate }): { Hit }

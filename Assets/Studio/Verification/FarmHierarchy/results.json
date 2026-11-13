@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-13",
+  "placeId": "134743372234687",
+  "hierarchyVersion": 2,
+  "roots": 9,
+  "partsPerFarm": 460,
+  "collisionsPerFarm": 55,
+  "originalInstancesPreserved": 4653,
+  "addedFolders": 189,
+  "idempotentChanges": 0,
+  "strictFiles": 17,
+  "strictErrors": 0,
+  "syncedProductionScripts": 8,
+  "offlineChecks": {
+    "hierarchyAndBuilders": 4437,
+    "village": 40,
+    "restaurant": 222,
+    "camera": 59,
+    "signAudience": 20,
+    "species": 18,
+    "attackVfx": 1100,
+    "combatSound": 26,
+    "zapProtocolPredictionSpatial": 22
+  },
+  "runtime": {
+    "productionFixtureGroups": 10,
+    "villageChecks": 13,
+    "clientRearrival": [
+      "client-1",
+      "client-2"
+    ],
+    "respawnDistanceStuds": 0.5515199303627014,
+    "replacementPlayer": "Player4",
+    "reusedPlot": "Plot02",
+    "departureRuntimeCleared": true,
+    "endedInEdit": true,
+    "forcedEngineStreamOut": false
+  },
+  "separateExistingFailure": "FarmToolbarRegression: preview hierarchy persisted (unchanged FarmUITemplates.rbxm)",
+  "published": false
+}
